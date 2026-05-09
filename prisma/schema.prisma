@@ -1,0 +1,150 @@
+
+// SCHEMA DO BANCO — E-COMMERCE LAPES
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === USUÁRIOS ===
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart        Cart?
+  orders      Order[]
+  couponUsage CouponUsage[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+// === PRODUTOS ===
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  price       Decimal   @db.Decimal(10, 2)
+  stock       Int
+  category    String
+  image       String?
+  deletedAt   DateTime?             // soft delete
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// === CARRINHO ===
+model Cart {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id])
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        Int @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])   // um produto por carrinho (qty controla)
+  @@map("cart_items")
+}
+
+// === PEDIDOS ===
+model Order {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  status    OrderStatus @default(PENDING)
+  total     Decimal   @db.Decimal(10, 2)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  couponId Int?
+  coupon   Coupon?     @relation(fields: [couponId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id             Int   @id @default(autoincrement())
+  orderId        Int
+  productId      Int
+  quantity       Int
+  priceAtPurchase Decimal   @db.Decimal(10, 2) // snapshot do preco no momento da compra
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// === CUPONS ===
+model Coupon {
+  id            Int        @id @default(autoincrement())
+  code          String     @unique
+  type          CouponType
+  value         Decimal   @db.Decimal(10, 2)                   // percentual (ex: 10) ou valor fixo (ex: 25.00)
+  minOrderValue Decimal   @db.Decimal(10, 2)      @default(0)  // valor minimo do pedido pra aplicar
+  expiresAt     DateTime
+  createdAt     DateTime   @default(now())
+
+  orders      Order[]
+  couponUsage CouponUsage[]
+
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id       Int @id @default(autoincrement())
+  couponId Int
+  userId   Int
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([couponId, userId])  // um cupom por usuario
+  @@map("coupon_usage")
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
