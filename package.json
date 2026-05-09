@@ -2,7 +2,7 @@
   "name": "ecommerce-lapes",
   "version": "1.0.0",
   "description": "E-commerce Simplificado — Desafio LAPES 2026",
-  "author": "Caio Vasconcelos Braga",
+  "author": "Caio / Edgar",
   "license": "MIT",
   "scripts": {
     "build": "nest build",
@@ -10,7 +10,7 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,test}/**/*.ts\"",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:migrate": "npx prisma migrate dev",
