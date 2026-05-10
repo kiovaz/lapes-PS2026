@@ -1,13 +1,12 @@
-// ============================================================
-// APP MODULE — Módulo raiz que registra todos os outros
-// ============================================================
+
+// APP MODULE — Módulo raiz 
 
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { LoggerMiddleware } from './common/logger/logger.middleware';
 
-// Módulos de domínio (descomente conforme for criando)
+// Módulos de domínio
 // import { AuthModule } from './modules/auth/auth.module';
 // import { ProductsModule } from './modules/products/products.module';
 // import { CartModule } from './modules/cart/cart.module';
@@ -16,17 +15,16 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 
 @Module({
   imports: [
-    // === RATE LIMITING (proteção contra spam) ===
+    // RATE LIMITING
     ThrottlerModule.forRoot([{
       ttl: 60000,    // janela de 60 segundos
       limit: 30,     // máximo 30 requisições por janela
     }]),
 
-    // === PRISMA (banco de dados) ===
+    // PRISMA
     PrismaModule,
 
-    // === MÓDULOS DE DOMÍNIO ===
-    // Descomente conforme for implementando:
+    // MÓDULOS DE DOMÍNIO
     // AuthModule,
     // ProductsModule,
     // CartModule,
@@ -35,7 +33,7 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
   ],
 })
 export class AppModule implements NestModule {
-  // Aplica o Logger em TODAS as rotas
+  // apply o logger em TODAS as rotas
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
   }

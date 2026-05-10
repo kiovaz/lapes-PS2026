@@ -1,7 +1,5 @@
-// ============================================================
-// LOGGER MIDDLEWARE — Loga toda requisição em formato JSON
-// Requisito do desafio: timestamp, método, rota, status, duração
-// ============================================================
+// LOGGER MIDDLEWARE
+// timestamp, método, rota, status, duração
 
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
@@ -13,7 +11,7 @@ export class LoggerMiddleware implements NestMiddleware {
     // Marca o início da requisição
     const start = Date.now();
 
-    // Quando a resposta terminar, loga
+    // qnd a res terminar --> loga
     res.on('finish', () => {
       const duration = Date.now() - start;
 
@@ -25,11 +23,11 @@ export class LoggerMiddleware implements NestMiddleware {
         duration: `${duration}ms`,
       };
 
-      // Loga em formato JSON (requisito do desafio)
+      // loga em formato JSON 
       console.log(JSON.stringify(log));
     });
 
-    // Passa pro próximo middleware/rota
+    // vai pro próximo middleware/rota
     next();
   }
 }

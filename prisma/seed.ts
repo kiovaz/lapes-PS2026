@@ -136,9 +136,6 @@ async function main() {
 
   console.log('✅ Carrinho criado');
   console.log('🎉 Seed finalizado!');
-  console.log('');
-  console.log('📧 Admin:    admin@lapes.com / 123456');
-  console.log('📧 Customer: joao@email.com  / 123456');
 }
 
 main()

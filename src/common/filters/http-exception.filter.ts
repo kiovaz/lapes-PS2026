@@ -1,7 +1,5 @@
-// ============================================================
 // HTTP EXCEPTION FILTER — Padroniza respostas de erro
-// Requisito: respostas padronizadas, sem stack traces expostos
-// ============================================================
+// res  padronizadas, sem st  exposta
 
 import {
   ExceptionFilter,
@@ -20,8 +18,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // Se for um HttpException do NestJS, pega o status
-    // Senão, é erro interno (500)
+    // if HttpException NestJS, pega o status
+    // else if é erro interno (500)
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: any = 'Erro interno do servidor';
 
@@ -29,13 +27,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      // Pega a mensagem do erro (pode ser string ou objeto)
+      // mensagem do erro (string ou objeto)
       message = typeof exceptionResponse === 'string'
         ? exceptionResponse
         : (exceptionResponse as any).message || exceptionResponse;
     }
 
-    // Loga o erro no servidor (pra debug)
+    // log  erro no servidor (debug)
     console.error(JSON.stringify({
       timestamp: new Date().toISOString(),
       path: request.url,
@@ -44,8 +42,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       error: exception instanceof Error ? exception.message : 'Unknown error',
     }));
 
-    // Retorna resposta padronizada pro cliente
-    // SEM stack trace (requisito do desafio)
+    // res padronizada
+    // SEM stack trace
     response.status(status).json({
       statusCode: status,
       message: message,

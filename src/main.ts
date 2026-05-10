@@ -1,6 +1,3 @@
-// ============================================================
-// MAIN.TS — Ponto de entrada da aplicação
-// ============================================================
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -11,7 +8,7 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // === VALIDAÇÃO GLOBAL (Pipe) ===
+  //  VALIDAÇÃO GLOBAL (Pipe) 
   // Ativa a verificação automática dos DTOs em toda a API
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,7 +18,7 @@ async function bootstrap() {
     }),
   );
 
-  // === SWAGGER (Documentação da API) ===
+  // SWAGGER
   const config = new DocumentBuilder()
     .setTitle('E-commerce LAPES')
     .setDescription('API do E-commerce Simplificado — Desafio LAPES 2026')
@@ -33,10 +30,10 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
   // Swagger fica disponível em: http://localhost:3000/docs
 
-  // === CORS ===
+  // CORS
   app.enableCors();
 
-  // === START ===
+  // START
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log('');
