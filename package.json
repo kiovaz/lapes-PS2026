@@ -2,7 +2,7 @@
   "name": "ecommerce-lapes",
   "version": "1.0.0",
   "description": "E-commerce Simplificado — Desafio LAPES 2026",
-  "author": "Caio / Edgar",
+  "author": "Caio Vasconcelos / Edgar Klewert",
   "license": "MIT",
   "scripts": {
     "build": "nest build",
@@ -29,7 +29,7 @@
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/throttler": "^5.0.0",
     "@prisma/client": "^5.0.0",
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "ioredis": "^5.3.0",
@@ -42,7 +42,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
-    "@types/bcrypt": "^5.0.0",
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",

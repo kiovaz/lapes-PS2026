@@ -4,7 +4,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { LoggerMiddleware } from './common/logger/logger.middleware';
 
 // Módulos de domínio
-// import { AuthModule } from './modules/auth/auth.module';
+import { AuthModule } from './modules/auth/auth.module';
 // import { ProductsModule } from './modules/products/products.module';
 // import { CartModule } from './modules/cart/cart.module';
 // import { OrdersModule } from './modules/orders/orders.module';
@@ -22,7 +22,7 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
     PrismaModule,
 
     // MÓDULOS DE DOMÍNIO
-    // AuthModule,
+    AuthModule,
     // ProductsModule,
     // CartModule,
     // OrdersModule,
