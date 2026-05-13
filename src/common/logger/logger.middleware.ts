@@ -1,6 +1,3 @@
-// LOGGER MIDDLEWARE
-// timestamp, método, rota, status, duração
-
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
@@ -8,10 +5,7 @@ import { Request, Response, NextFunction } from 'express';
 export class LoggerMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
-    // Marca o início da requisição
     const start = Date.now();
-
-    // qnd a res terminar --> loga
     res.on('finish', () => {
       const duration = Date.now() - start;
 
@@ -22,12 +16,8 @@ export class LoggerMiddleware implements NestMiddleware {
         statusCode: res.statusCode,
         duration: `${duration}ms`,
       };
-
-      // loga em formato JSON 
       console.log(JSON.stringify(log));
     });
-
-    // vai pro próximo middleware/rota
     next();
   }
 }

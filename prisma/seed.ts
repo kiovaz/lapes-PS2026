@@ -1,6 +1,3 @@
-// SEED dados de exemplo
-// Rodar: npm run prisma:seed
-
 import { PrismaClient, Role, CouponType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -9,7 +6,6 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  // === LIMPAR DADOS EXISTENTES ===
   await prisma.couponUsage.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
@@ -19,7 +15,6 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.user.deleteMany();
 
-  // === USUARIOS ===
   const hashedPassword = await bcrypt.hash('123456', 10);
 
   const admin = await prisma.user.create({
@@ -42,7 +37,6 @@ async function main() {
 
   console.log('✅ Usuários criados');
 
-  // === PRODUTOS ===
   const products = await Promise.all([
     prisma.product.create({
       data: {
@@ -98,13 +92,12 @@ async function main() {
 
   console.log('✅ Produtos criados');
 
-  // === CUPONS ===
   await prisma.coupon.create({
     data: {
       code: 'LAPES10',
       type: CouponType.PERCENT,
-      value: 10,                           // 10% de desconto
-      minOrderValue: 50,                   // pedido minimo de R$50
+      value: 10,
+      minOrderValue: 50,
       expiresAt: new Date('2026-12-31'),
     },
   });
@@ -113,22 +106,21 @@ async function main() {
     data: {
       code: 'FRETE20',
       type: CouponType.FIXED,
-      value: 20,                           // R$20 de desconto
-      minOrderValue: 100,                  // pedido minimo de R$100
+      value: 20,
+      minOrderValue: 100,
       expiresAt: new Date('2026-12-31'),
     },
   });
 
   console.log('✅ Cupons criados');
 
-  // === CARRINHO DO JOAO ===
   await prisma.cart.create({
     data: {
       userId: customer.id,
       items: {
         create: [
-          { productId: products[0].id, quantity: 2 },  // 2 camisetas
-          { productId: products[2].id, quantity: 1 },  // 1 tênis
+          { productId: products[0].id, quantity: 2 },
+          { productId: products[2].id, quantity: 1 },
         ],
       },
     },

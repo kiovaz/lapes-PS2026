@@ -1,6 +1,3 @@
-
-// APP MODULE — Módulo raiz 
-
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './common/prisma/prisma.module';
