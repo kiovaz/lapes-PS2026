@@ -14,10 +14,12 @@ import { ProductsModule } from './modules/products/products.module';
 @Module({
   imports: [
     // RATE LIMITING
-    ThrottlerModule.forRoot([{
-      ttl: 60000,    // janela de 60 segundos
-      limit: 30,     // máximo 30 requisições por janela
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // janela de 60 segundos
+        limit: 30, // máximo 30 requisições por janela
+      },
+    ]),
 
     // PRISMA + REDIS
     PrismaModule,
