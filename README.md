@@ -183,15 +183,19 @@ Módulo de autenticação completo com registro, login e perfil protegido.
 
 ### Docker Compose
 
-3 serviços orquestrados via `docker-compose.yml`:
+3 serviços orquestrados via `docker-compose.yml` com **setup zero-config**:
 
-| Serviço | Imagem | Porta (host) |
-|---------|--------|-------------|
-| **api** | Build local (Dockerfile) | `PORT_API` (padrão: 3000) |
-| **db** | `postgres:16-alpine` | `PORT_POSTGRES` (padrão: 5433) |
-| **redis** | `redis:7-alpine` | `PORT_REDIS` (padrão: 6379) |
+| Serviço | Imagem | Porta (host) | Healthcheck |
+|---------|--------|-------------|-------------|
+| **api** | Build local (Dockerfile) | `3000` | — |
+| **db** | `postgres:16-alpine` | `5433` | `pg_isready` |
+| **redis** | `redis:7-alpine` | `6379` | `redis-cli ping` |
 
-A API usa hot-reload (`npm run start:dev`) com volume mount do código fonte.
+**Automação do setup:**
+- `entrypoint.sh` aguarda Postgres via TCP, roda `prisma migrate deploy` + `prisma db seed`, e inicia a API
+- `depends_on: condition: service_healthy` garante ordem correta de inicialização
+- Valores padrão em todas as variáveis — funciona sem `.env`
+- Hot-reload (`npm run start:dev`) com volume mount do código fonte
 
 ### CI/CD (GitHub Actions)
 
@@ -235,38 +239,44 @@ Erros não tratados são capturados pelo `GlobalExceptionFilter` e retornados em
 ### Pré-requisitos
 
 - [Docker](https://www.docker.com/) e Docker Compose
-- [Node.js 20+](https://nodejs.org/) (opcional, para dev local sem Docker)
 
-### Com Docker (recomendado)
+### Com Docker (recomendado) — Setup Zero-Config
 
 ```bash
-# Clone o repositório
+# Clone e rode — só isso!
 git clone https://github.com/kiovaz/processo-seletivo-2026.git
 cd processo-seletivo-2026
-
-# Configure as variáveis de ambiente
-cp .env.example .env
-
-# Suba todos os serviços
-docker-compose up -d
-
-# Rode as migrations
-docker exec ecommerce-api npx prisma migrate deploy
-
-# Execute o seed
-docker exec ecommerce-api npx prisma db seed
-
-# API disponível em http://localhost:3000
-# Swagger em http://localhost:3000/docs
+docker-compose up
 ```
 
-### Sem Docker
+> **Tudo é automático:** o sistema aguarda o Postgres ficar pronto, aplica as migrations, popula o banco com dados de desenvolvimento (seed) e inicia a API com hot-reload.
+
+- 🌐 **API**: http://localhost:3000
+- 📖 **Swagger**: http://localhost:3000/docs
+- 🔑 **Login admin**: `admin@lapes.com` / `123456`
+- 🛒 **Login cliente**: `joao@email.com` / `123456`
+
+> **Nota:** O projeto funciona sem precisar criar um `.env` — valores padrão de desenvolvimento já estão configurados. Se quiser customizar, copie o `.env.example` para `.env` e ajuste.
+
+### Comandos Úteis (Makefile)
+
+| Comando | Descrição |
+|---------|-----------|
+| `make dev` | Sobe tudo com build |
+| `make dev-d` | Sobe tudo em background |
+| `make down` | Para todos os containers |
+| `make logs` | Acompanha logs da API em tempo real |
+| `make seed` | Re-executa o seed do banco |
+| `make reset` | Destrói tudo (inclusive dados) e recria do zero |
+| `make studio` | Abre o Prisma Studio na porta 5555 |
+
+### Sem Docker (desenvolvimento local)
 
 ```bash
 # Instale as dependências
 npm install
 
-# Configure .env apontando para seu PostgreSQL local
+# Configure .env apontando para seu PostgreSQL e Redis locais
 cp .env.example .env
 
 # Gere o Prisma Client e rode migrations

@@ -9,7 +9,6 @@ import { Request, Response } from 'express';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -22,17 +21,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      message = typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : (exceptionResponse as any).message || exceptionResponse;
+      message =
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || exceptionResponse;
     }
-    console.error(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      statusCode: status,
-      error: exception instanceof Error ? exception.message : 'Unknown error',
-    }));
+    console.error(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        path: request.url,
+        method: request.method,
+        statusCode: status,
+        error: exception instanceof Error ? exception.message : 'Unknown error',
+      }),
+    );
     response.status(status).json({
       statusCode: status,
       message: message,

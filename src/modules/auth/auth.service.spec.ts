@@ -9,8 +9,6 @@ jest.mock('bcrypt');
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: PrismaService;
-  let jwtService: JwtService;
 
   const mockPrisma = {
     user: {
@@ -33,14 +31,16 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get<PrismaService>(PrismaService);
-    jwtService = module.get<JwtService>(JwtService);
 
     jest.clearAllMocks();
   });
 
   describe('register', () => {
-    const registerDto = { name: 'Edgar Klewert', email: 'edgarklewert@email.com', password: '123456' };
+    const registerDto = {
+      name: 'Edgar Klewert',
+      email: 'edgarklewert@email.com',
+      password: '123456',
+    };
 
     it('deve registrar um novo usuário e retornar token + dados do user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
@@ -87,7 +87,9 @@ describe('AuthService', () => {
         email: 'edgarklewert@email.com',
       });
 
-      await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
+      await expect(service.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
 
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
@@ -123,7 +125,9 @@ describe('AuthService', () => {
     it('deve lançar UnauthorizedException (401) se o email não existe', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
 
       expect(bcrypt.compare).not.toHaveBeenCalled();
     });
@@ -137,7 +141,9 @@ describe('AuthService', () => {
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -170,7 +176,9 @@ describe('AuthService', () => {
     it('deve lançar UnauthorizedException (401) se o user não existe', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getProfile(999)).rejects.toThrow(UnauthorizedException);
+      await expect(service.getProfile(999)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
