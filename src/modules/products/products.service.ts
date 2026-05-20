@@ -13,9 +13,9 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-  ) {}
+  ) { }
 
-  // ─── Admin ───────────────────────────────────────────────────
+  // ─── Admin
 
   async create(dto: CreateProductDto) {
     const product = await this.prisma.product.create({ data: dto });
@@ -56,7 +56,7 @@ export class ProductsService {
     return product;
   }
 
-  // ─── Público ─────────────────────────────────────────────────
+  // Público
 
   async findAll(filters: FilterProductsDto) {
     const page = filters.page || 1;
@@ -84,8 +84,10 @@ export class ProductsService {
     }
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       where.price = {};
-      if (filters.minPrice !== undefined) (where.price as Record<string, unknown>).gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) (where.price as Record<string, unknown>).lte = filters.maxPrice;
+      if (filters.minPrice !== undefined)
+        (where.price as Record<string, unknown>).gte = filters.minPrice;
+      if (filters.maxPrice !== undefined)
+        (where.price as Record<string, unknown>).lte = filters.maxPrice;
     }
 
     const [data, total] = await Promise.all([
@@ -138,7 +140,7 @@ export class ProductsService {
     return product;
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────
+  // Helpers
 
   private async ensureExists(id: number) {
     const product = await this.prisma.product.findFirst({
@@ -154,7 +156,8 @@ export class ProductsService {
 
   private async invalidateListCache() {
     const deleted = await this.redis.delByPattern('products:list:*');
-    if (deleted > 0) this.logger.debug(`Cache invalidado: ${deleted} chave(s) de lista`);
+    if (deleted > 0)
+      this.logger.debug(`Cache invalidado: ${deleted} chave(s) de lista`);
   }
 
   private hashFilters(filters: FilterProductsDto): string {

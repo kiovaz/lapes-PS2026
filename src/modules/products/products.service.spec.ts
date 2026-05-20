@@ -63,7 +63,11 @@ describe('ProductsService', () => {
     };
 
     it('deve criar um produto e invalidar o cache de lista', async () => {
-      mockPrisma.product.create.mockResolvedValue({ id: 1, ...dto, deletedAt: null });
+      mockPrisma.product.create.mockResolvedValue({
+        id: 1,
+        ...dto,
+        deletedAt: null,
+      });
       mockRedis.delByPattern.mockResolvedValue(0);
 
       const result = await service.create(dto);
@@ -78,7 +82,10 @@ describe('ProductsService', () => {
 
   describe('findAll', () => {
     it('deve retornar do cache se existir (cache HIT)', async () => {
-      const cachedResult = { data: [sampleProduct], meta: { total: 1, page: 1, limit: 10, totalPages: 1 } };
+      const cachedResult = {
+        data: [sampleProduct],
+        meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
+      };
       mockRedis.get.mockResolvedValue(cachedResult);
 
       const result = await service.findAll({});
@@ -136,7 +143,10 @@ describe('ProductsService', () => {
       await service.findAll({ search: 'camiseta' });
 
       const whereArg = mockPrisma.product.findMany.mock.calls[0][0].where;
-      expect(whereArg.name).toEqual({ contains: 'camiseta', mode: 'insensitive' });
+      expect(whereArg.name).toEqual({
+        contains: 'camiseta',
+        mode: 'insensitive',
+      });
     });
 
     it('deve aplicar paginação (page + limit) e retornar meta com totalPages', async () => {
@@ -179,7 +189,11 @@ describe('ProductsService', () => {
       expect(mockPrisma.product.findFirst).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: null },
       });
-      expect(mockRedis.set).toHaveBeenCalledWith('products:detail:1', sampleProduct, 120);
+      expect(mockRedis.set).toHaveBeenCalledWith(
+        'products:detail:1',
+        sampleProduct,
+        120,
+      );
       expect(result).toEqual(sampleProduct);
     });
 
@@ -205,7 +219,10 @@ describe('ProductsService', () => {
 
     it('deve atualizar campos e invalidar cache (lista + detalhe)', async () => {
       mockPrisma.product.findFirst.mockResolvedValue(sampleProduct);
-      mockPrisma.product.update.mockResolvedValue({ ...sampleProduct, ...updateDto });
+      mockPrisma.product.update.mockResolvedValue({
+        ...sampleProduct,
+        ...updateDto,
+      });
       mockRedis.delByPattern.mockResolvedValue(2);
       mockRedis.del.mockResolvedValue(undefined);
 
@@ -223,7 +240,9 @@ describe('ProductsService', () => {
     it('deve lançar NotFoundException para produto soft-deleted', async () => {
       mockPrisma.product.findFirst.mockResolvedValue(null);
 
-      await expect(service.update(1, updateDto)).rejects.toThrow(NotFoundException);
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockPrisma.product.update).not.toHaveBeenCalled();
     });
   });
@@ -233,7 +252,10 @@ describe('ProductsService', () => {
   describe('remove', () => {
     it('deve marcar deletedAt e invalidar cache', async () => {
       mockPrisma.product.findFirst.mockResolvedValue(sampleProduct);
-      mockPrisma.product.update.mockResolvedValue({ ...sampleProduct, deletedAt: new Date() });
+      mockPrisma.product.update.mockResolvedValue({
+        ...sampleProduct,
+        deletedAt: new Date(),
+      });
       mockRedis.delByPattern.mockResolvedValue(3);
       mockRedis.del.mockResolvedValue(undefined);
 

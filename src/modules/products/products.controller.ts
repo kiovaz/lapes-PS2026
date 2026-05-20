@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
 import { ProductsService } from './products.service';
@@ -15,14 +31,17 @@ import { Role } from '@prisma/client';
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
-  // ─── Rotas Públicas ──────────────────────────────────────────
+  // Rotas Públicas
 
   @Get()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Lista produtos com filtros e paginação' })
-  @ApiResponse({ status: 200, description: 'Lista de produtos retornada com sucesso.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de produtos retornada com sucesso.',
+  })
   findAll(@Query() filters: FilterProductsDto) {
     return this.productsService.findAll(filters);
   }
@@ -36,7 +55,7 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
-  // ─── Rotas Admin ─────────────────────────────────────────────
+  // Rotas Admin
 
   @Post()
   @ApiBearerAuth()

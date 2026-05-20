@@ -1,11 +1,23 @@
-import { IsString, IsNotEmpty, MinLength, IsNumber, IsPositive, IsInt, Min, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  IsNumber,
+  IsPositive,
+  IsInt,
+  Min,
+  IsOptional,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Camiseta Básica' })
   @IsString()
   @IsNotEmpty()
-  @MinLength(2, { message: 'O nome do produto deve conter pelo menos 2 caracteres' })
+  @MinLength(2, {
+    message: 'O nome do produto deve conter pelo menos 2 caracteres',
+  })
   name: string;
 
   @ApiProperty({ example: 'Camiseta 100% algodão, confortável e estilosa.' })

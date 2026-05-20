@@ -1,14 +1,27 @@
-import { IsOptional, IsString, IsNumber, Min, Max, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class FilterProductsDto {
-  @ApiPropertyOptional({ description: 'Busca por nome (case-insensitive)', example: 'camiseta' })
+  @ApiPropertyOptional({
+    description: 'Busca por nome (case-insensitive)',
+    example: 'camiseta',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filtra por categoria exata', example: 'Roupas' })
+  @ApiPropertyOptional({
+    description: 'Filtra por categoria exata',
+    example: 'Roupas',
+  })
   @IsOptional()
   @IsString()
   category?: string;
@@ -34,7 +47,10 @@ export class FilterProductsDto {
   @Min(1)
   page?: number;
 
-  @ApiPropertyOptional({ description: 'Itens por página (default: 10, max: 50)', example: 10 })
+  @ApiPropertyOptional({
+    description: 'Itens por página (default: 10, max: 50)',
+    example: 10,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -42,12 +58,20 @@ export class FilterProductsDto {
   @Max(50)
   limit?: number;
 
-  @ApiPropertyOptional({ description: 'Campo de ordenação', example: 'createdAt', enum: ['price', 'name', 'createdAt'] })
+  @ApiPropertyOptional({
+    description: 'Campo de ordenação',
+    example: 'createdAt',
+    enum: ['price', 'name', 'createdAt'],
+  })
   @IsOptional()
   @IsIn(['price', 'name', 'createdAt'])
   sortBy?: string;
 
-  @ApiPropertyOptional({ description: 'Direção da ordenação', example: 'desc', enum: ['asc', 'desc'] })
+  @ApiPropertyOptional({
+    description: 'Direção da ordenação',
+    example: 'desc',
+    enum: ['asc', 'desc'],
+  })
   @IsOptional()
   @IsIn(['asc', 'desc'])
   order?: string;
