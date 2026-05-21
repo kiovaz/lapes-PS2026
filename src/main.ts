@@ -31,6 +31,8 @@ async function bootstrap() {
   console.log('');
   console.log('🚀 API rodando em: http://localhost:' + port);
   console.log('📚 Swagger em:     http://localhost:' + port + '/docs');
+  console.log('🎨 Prisma Studio em:   http://localhost:5555');
+  console.log('📊 Redis Commander em: http://localhost:8081');
   console.log('');
 }
 bootstrap();

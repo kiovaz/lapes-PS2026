@@ -17,5 +17,9 @@ echo "🌱 Rodando seed..."
 npx prisma db seed || echo "⚠️  Seed já executado ou falhou (dados podem já existir)"
 
 echo ""
+echo "🎨 Iniciando Prisma Studio na porta 5555..."
+npx prisma studio --port 5555 --hostname 0.0.0.0 &
+
+echo ""
 echo "🚀 Iniciando aplicação..."
 exec npm run start:dev
