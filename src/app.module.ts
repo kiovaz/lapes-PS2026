@@ -7,7 +7,7 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 // Módulos de domínio
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
-// import { CartModule } from './modules/cart/cart.module';
+import { CartModule } from './modules/cart/cart.module';
 // import { OrdersModule } from './modules/orders/orders.module';
 // import { CouponsModule } from './modules/coupons/coupons.module';
 
@@ -28,7 +28,7 @@ import { ProductsModule } from './modules/products/products.module';
     // MÓDULOS DE DOMÍNIO
     AuthModule,
     ProductsModule,
-    // CartModule,
+    CartModule,
     // OrdersModule,
     // CouponsModule,
   ],
