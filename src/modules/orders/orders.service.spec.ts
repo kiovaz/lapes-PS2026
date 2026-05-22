@@ -11,7 +11,7 @@ import { RedisService } from 'src/common/redis/redis.service';
 import { StripeService } from './stripe.service';
 import { OrderStatus, CouponType, Prisma } from '@prisma/client';
 
-// ─── Helpers ───
+// Helpers
 
 const decimal = (v: number) => new Prisma.Decimal(v);
 
@@ -68,7 +68,7 @@ const mockOrder = (overrides = {}) => ({
   ...overrides,
 });
 
-// ─── Mock Factories ───
+// Mock Factories
 
 const mockPrismaService = () => ({
   order: {
@@ -136,9 +136,7 @@ describe('OrdersService', () => {
     service = module.get<OrdersService>(OrdersService);
   });
 
-  // ═══════════════════════════════════════════
   //  CHECKOUT
-  // ═══════════════════════════════════════════
 
   describe('checkout', () => {
     it('deve criar pedido com sucesso, decrementar estoque e limpar carrinho', async () => {
@@ -147,9 +145,9 @@ describe('OrdersService', () => {
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.order.findUnique.mockResolvedValue(null); // sem idempotência prévia
 
-      // Mock da transaction — executa o callback passando o mesmo prisma mock
+      // Mock
       prisma.$transaction.mockImplementation(async (fn: Function) => {
-        // Dentro da transaction, criar mocks para tx
+        //  mocks  tx
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
@@ -216,7 +214,6 @@ describe('OrdersService', () => {
 
     it('deve rejeitar checkout com estoque insuficiente', async () => {
       const cart = mockCart([mockCartItem({ stock: 10 })]);
-      // O item pede 2, e o produto dentro da tx só tem 1
       prisma.cart.findUnique.mockResolvedValue(cart);
 
       prisma.$transaction.mockImplementation(async (fn: Function) => {
@@ -248,7 +245,7 @@ describe('OrdersService', () => {
       );
     });
 
-    // ─── Cupons ───
+    // Cupons
 
     it('deve aplicar cupom percentual corretamente', async () => {
       const cart = mockCart();
@@ -359,10 +356,7 @@ describe('OrdersService', () => {
     });
   });
 
-  // ═══════════════════════════════════════════
   //  CANCELAMENTO
-  // ═══════════════════════════════════════════
-
   describe('cancel', () => {
     it('deve cancelar pedido PENDING e devolver estoque', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
@@ -448,9 +442,8 @@ describe('OrdersService', () => {
     });
   });
 
-  // ═══════════════════════════════════════════
-  //  MÁQUINA DE ESTADOS
-  // ═══════════════════════════════════════════
+
+  // MÁQUINA DE ESTADOS
 
   describe('advanceStatus', () => {
     it('deve avançar PENDING → PAID', async () => {
@@ -528,9 +521,7 @@ describe('OrdersService', () => {
     });
   });
 
-  // ═══════════════════════════════════════════
-  //  WEBHOOKS
-  // ═══════════════════════════════════════════
+  // WEBHOOKS
 
   describe('handlePaymentSuccess', () => {
     it('deve marcar pedido PENDING como PAID', async () => {
@@ -591,9 +582,8 @@ describe('OrdersService', () => {
     });
   });
 
-  // ═══════════════════════════════════════════
-  //  LISTAGEM
-  // ═══════════════════════════════════════════
+
+  // LISTAGEM
 
   describe('findAll', () => {
     it('deve listar pedidos do customer (apenas os seus)', async () => {
