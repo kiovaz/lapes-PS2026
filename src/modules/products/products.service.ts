@@ -13,9 +13,9 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-  ) {}
+  ) { }
 
-  // ─── Admin
+  // Admin
 
   async create(dto: CreateProductDto) {
     const product = await this.prisma.product.create({ data: dto });
@@ -65,7 +65,6 @@ export class ProductsService {
     const order = filters.order || 'desc';
     const skip = (page - 1) * limit;
 
-    // Cache key baseada nos filtros
     const cacheKey = `products:list:${this.hashFilters(filters)}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
@@ -109,9 +108,8 @@ export class ProductsService {
         totalPages: Math.ceil(total / limit),
       },
     };
-
-    // Popula cache — TTL 60s
-    await this.redis.set(cacheKey, result, 60);
+    const listTtlMs = Number(process.env.CACHE_PRODUCTS_LIST_TTL_MS) || 600_000;
+    await this.redis.set(cacheKey, result, listTtlMs);
     this.logger.debug(`Cache MISS → populado: ${cacheKey}`);
 
     return result;
@@ -133,8 +131,8 @@ export class ProductsService {
       throw new NotFoundException(`Produto #${id} não encontrado.`);
     }
 
-    // Popula cache — TTL 120s
-    await this.redis.set(cacheKey, product, 120);
+    const detailTtlMs = Number(process.env.CACHE_PRODUCTS_DETAIL_TTL_MS) || 900_000;
+    await this.redis.set(cacheKey, product, detailTtlMs);
     this.logger.debug(`Cache MISS → populado: ${cacheKey}`);
 
     return product;

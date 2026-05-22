@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy, Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 import Redis from 'ioredis';
 
@@ -17,8 +18,8 @@ export class RedisService implements OnModuleDestroy {
     this.client.on('error', (err) => this.logger.error('Erro no Redis', err));
   }
 
-  // Busca um valor no Redis pela chave.
-  // O <T> é um "generic" — permite tipar o retorno
+  // Busca valor chave
+  // O <T> é um "generic" que permite tipar o retorno
   async get<T = string>(key: string): Promise<T | null> {
     const value = await this.client.get(key);
     if (!value) return null;
@@ -30,19 +31,20 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
-  async set(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
+  async set(key: string, value: unknown, ttlMs?: number): Promise<void> {
     const serialized =
       typeof value === 'string' ? value : JSON.stringify(value);
 
-    if (ttlSeconds) {
+    if (ttlMs) {
+      const ttlSeconds = Math.ceil(ttlMs / 1000);
       await this.client.set(key, serialized, 'EX', ttlSeconds);
     } else {
-      // Sem TTL = o dado fica salvo até ser deletado manualmente
+      // Sem TTL = o dado fica salvo até ser deletado ou conteiner encerrar
       await this.client.set(key, serialized);
     }
   }
 
-  // Deleta UMA chave específica do Redis
+  // Deleta UMA key
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
@@ -69,6 +71,34 @@ export class RedisService implements OnModuleDestroy {
 
     return deleted;
   }
+  // Distributed Lock
+  async acquireLock(key: string, ttlMs: number): Promise<string | null> {
+    const lockKey = `lock:${key}`;
+    const token = randomUUID();
+    const ttlSeconds = Math.ceil(ttlMs / 1000);
+    const result = await this.client.set(
+      lockKey,
+      token,
+      'EX',
+      ttlSeconds,
+      'NX',
+    );
+    return result === 'OK' ? token : null;
+  }
+
+  async releaseLock(key: string, token: string): Promise<boolean> {
+    const lockKey = `lock:${key}`;
+    const script = `
+      if redis.call("GET", KEYS[1]) == ARGV[1] then
+        return redis.call("DEL", KEYS[1])
+      else
+        return 0
+      end
+    `;
+    const result = await this.client.eval(script, 1, lockKey, token);
+    return result === 1;
+  }
+
   async onModuleDestroy() {
     await this.client.quit();
     this.logger.log('🔴 Desconectado do Redis');
