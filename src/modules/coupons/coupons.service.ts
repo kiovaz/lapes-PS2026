@@ -15,7 +15,7 @@ import { Prisma } from '@prisma/client';
 export class CouponsService {
   private readonly logger = new Logger(CouponsService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // CRUD(Admin)
 
@@ -27,9 +27,7 @@ export class CouponsService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        `Cupom com código "${code}" já existe.`,
-      );
+      throw new ConflictException(`Cupom com código "${code}" já existe.`);
     }
 
     if (dto.type === 'PERCENT' && dto.value > 100) {
@@ -109,9 +107,7 @@ export class CouponsService {
           where: { code },
         });
         if (existing) {
-          throw new ConflictException(
-            `Cupom com código "${code}" já existe.`,
-          );
+          throw new ConflictException(`Cupom com código "${code}" já existe.`);
         }
       }
       data.code = code;
@@ -156,7 +152,7 @@ export class CouponsService {
     if (coupon._count.orders > 0) {
       throw new BadRequestException(
         `Cupom #${id} não pode ser removido pois está vinculado a ${coupon._count.orders} pedido(s). ` +
-        'Considere apenas alterar a data de expiração para desativá-lo.',
+          'Considere apenas alterar a data de expiração para desativá-lo.',
       );
     }
 
@@ -200,7 +196,7 @@ export class CouponsService {
     if (subtotal.lt(coupon.minOrderValue)) {
       throw new BadRequestException(
         `Valor mínimo do pedido para usar o cupom "${code}" ` +
-        `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
+          `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
       );
     }
 

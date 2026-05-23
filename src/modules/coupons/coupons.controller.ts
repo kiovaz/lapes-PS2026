@@ -32,7 +32,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @Controller('coupons')
 export class CouponsController {
-  constructor(private readonly couponsService: CouponsService) { }
+  constructor(private readonly couponsService: CouponsService) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -98,10 +98,7 @@ export class CouponsController {
   @ApiResponse({ status: 403, description: 'Somente administradores.' })
   @ApiResponse({ status: 404, description: 'Cupom não encontrado.' })
   @ApiResponse({ status: 409, description: 'Código de cupom já existe.' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCouponDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCouponDto) {
     return this.couponsService.update(id, dto);
   }
 

@@ -249,13 +249,13 @@ describe('OrdersService', () => {
       const cart = mockCart([cartItem]);
 
       redis.acquireLock
-        .mockResolvedValueOnce('lock-token-1')  // primeira requisição obtém lock
-        .mockResolvedValueOnce(null);            // segunda requisição é bloqueada
+        .mockResolvedValueOnce('lock-token-1') // primeira requisição obtém lock
+        .mockResolvedValueOnce(null); // segunda requisição é bloqueada
 
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.order.findUnique.mockResolvedValue(null);
 
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
@@ -263,7 +263,9 @@ describe('OrdersService', () => {
             update: jest.fn(),
           },
           order: {
-            create: jest.fn().mockResolvedValue(mockOrder({ total: decimal(49.9) })),
+            create: jest
+              .fn()
+              .mockResolvedValue(mockOrder({ total: decimal(49.9) })),
           },
           couponUsage: { create: jest.fn() },
           cartItem: { deleteMany: jest.fn() },
@@ -289,7 +291,11 @@ describe('OrdersService', () => {
 
     it('deve rejeitar checkout de outro usuário via lock pessimista quando estoque esgota (FOR UPDATE)', async () => {
       const cartItem1 = { ...mockCartItem({ stock: 1 }), quantity: 1 };
-      const cartItem2 = { ...mockCartItem({ stock: 1 }), quantity: 1, cartId: 2 };
+      const cartItem2 = {
+        ...mockCartItem({ stock: 1 }),
+        quantity: 1,
+        cartId: 2,
+      };
       const cartUser1 = mockCart([cartItem1]);
       const cartUser2 = { ...mockCart([cartItem2]), id: 2, userId: 2 };
 
@@ -302,15 +308,15 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(null);
 
       let txCount = 0;
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         txCount++;
         const stockAfterLock = txCount === 1 ? 1 : 0;
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
-            findMany: jest.fn().mockResolvedValue([
-              mockProduct({ stock: stockAfterLock }),
-            ]),
+            findMany: jest
+              .fn()
+              .mockResolvedValue([mockProduct({ stock: stockAfterLock })]),
             update: jest.fn(),
           },
           order: {
@@ -336,15 +342,15 @@ describe('OrdersService', () => {
       redis.acquireLock.mockResolvedValue('lock-token');
 
       let callCount = 0;
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         callCount++;
         const currentStock = callCount === 1 ? 2 : 0; // primeiro vê estoque, segundo vê 0
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
-            findMany: jest.fn().mockResolvedValue([
-              mockProduct({ stock: currentStock }),
-            ]),
+            findMany: jest
+              .fn()
+              .mockResolvedValue([mockProduct({ stock: currentStock })]),
             update: jest.fn(),
           },
           order: {
@@ -552,8 +558,6 @@ describe('OrdersService', () => {
     });
   });
 
-
-
   describe('advanceStatus', () => {
     it('deve avançar PENDING → PAID', async () => {
       prisma.order.findUnique.mockResolvedValue(
@@ -630,7 +634,6 @@ describe('OrdersService', () => {
     });
   });
 
-
   describe('handlePaymentSuccess', () => {
     it('deve marcar pedido PENDING como PAID', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
@@ -689,8 +692,6 @@ describe('OrdersService', () => {
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
-
-
 
   describe('findAll', () => {
     it('deve listar pedidos do customer (apenas os seus)', async () => {

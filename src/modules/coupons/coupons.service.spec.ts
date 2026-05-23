@@ -8,7 +8,6 @@ import { CouponsService } from './coupons.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CouponType, Prisma } from '@prisma/client';
 
-
 const decimal = (v: number) => new Prisma.Decimal(v);
 
 const mockCoupon = (overrides = {}) => ({
@@ -21,7 +20,6 @@ const mockCoupon = (overrides = {}) => ({
   createdAt: new Date(),
   ...overrides,
 });
-
 
 const mockPrismaService = () => ({
   coupon: {
@@ -44,15 +42,11 @@ describe('CouponsService', () => {
     prisma = mockPrismaService();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CouponsService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [CouponsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<CouponsService>(CouponsService);
   });
-
 
   describe('create', () => {
     it('deve criar cupom percentual com sucesso', async () => {
@@ -81,7 +75,11 @@ describe('CouponsService', () => {
     it('deve criar cupom de valor fixo com sucesso', async () => {
       prisma.coupon.findUnique.mockResolvedValue(null);
       prisma.coupon.create.mockResolvedValue(
-        mockCoupon({ code: 'FRETE20', type: CouponType.FIXED, value: decimal(20) }),
+        mockCoupon({
+          code: 'FRETE20',
+          type: CouponType.FIXED,
+          value: decimal(20),
+        }),
       );
 
       const result = await service.create({
@@ -121,7 +119,6 @@ describe('CouponsService', () => {
     });
   });
 
-
   describe('findAll', () => {
     it('deve retornar todos os cupons', async () => {
       prisma.coupon.findMany.mockResolvedValue([mockCoupon()]);
@@ -136,8 +133,6 @@ describe('CouponsService', () => {
       );
     });
   });
-
-
 
   describe('findOne', () => {
     it('deve retornar cupom por id', async () => {
@@ -155,8 +150,6 @@ describe('CouponsService', () => {
     });
   });
 
-
-
   describe('update', () => {
     it('deve atualizar valor do cupom', async () => {
       prisma.coupon.findUnique.mockResolvedValue(mockCoupon());
@@ -173,9 +166,7 @@ describe('CouponsService', () => {
       prisma.coupon.findUnique
         .mockResolvedValueOnce(mockCoupon()) // findOne check
         .mockResolvedValueOnce(null); // uniqueness check
-      prisma.coupon.update.mockResolvedValue(
-        mockCoupon({ code: 'NEWCODE' }),
-      );
+      prisma.coupon.update.mockResolvedValue(mockCoupon({ code: 'NEWCODE' }));
 
       const result = await service.update(1, { code: 'newcode' });
 
@@ -187,9 +178,9 @@ describe('CouponsService', () => {
         .mockResolvedValueOnce(mockCoupon()) // findOne check
         .mockResolvedValueOnce(mockCoupon({ id: 2, code: 'TAKEN' })); // uniqueness check
 
-      await expect(
-        service.update(1, { code: 'TAKEN' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.update(1, { code: 'TAKEN' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('deve rejeitar cupom inexistente', async () => {
@@ -203,12 +194,11 @@ describe('CouponsService', () => {
     it('deve rejeitar percentual > 100 ao atualizar', async () => {
       prisma.coupon.findUnique.mockResolvedValue(mockCoupon());
 
-      await expect(
-        service.update(1, { value: 150 }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update(1, { value: 150 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
-
 
   describe('remove', () => {
     it('deve remover cupom sem pedidos vinculados', async () => {
@@ -239,7 +229,6 @@ describe('CouponsService', () => {
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
   });
-
 
   describe('validate', () => {
     it('deve validar cupom percentual com sucesso', async () => {
