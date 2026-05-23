@@ -146,7 +146,7 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(null); // sem idempotência prévia
 
       // Mock
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         //  mocks  tx
         const tx = {
           $queryRawUnsafe: jest.fn(),
@@ -169,7 +169,10 @@ describe('OrdersService', () => {
       expect(result.order.id).toBe(1);
       expect(result.clientSecret).toBe('pi_test_123_secret_abc');
       expect(redis.acquireLock).toHaveBeenCalledWith('checkout:user:1', 30000);
-      expect(redis.releaseLock).toHaveBeenCalledWith('checkout:user:1', 'mock-lock-token');
+      expect(redis.releaseLock).toHaveBeenCalledWith(
+        'checkout:user:1',
+        'mock-lock-token',
+      );
       expect(stripe.createPaymentIntent).toHaveBeenCalled();
       expect(redis.delByPattern).toHaveBeenCalledWith('products:*');
     });
@@ -202,9 +205,7 @@ describe('OrdersService', () => {
     });
 
     it('deve rejeitar checkout com produto soft-deleted', async () => {
-      const cart = mockCart([
-        mockCartItem({ deletedAt: new Date() }),
-      ]);
+      const cart = mockCart([mockCartItem({ deletedAt: new Date() })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
 
       await expect(service.checkout(1, {})).rejects.toThrow(
@@ -216,13 +217,11 @@ describe('OrdersService', () => {
       const cart = mockCart([mockCartItem({ stock: 10 })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
 
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
-            findMany: jest
-              .fn()
-              .mockResolvedValue([mockProduct({ stock: 1 })]),
+            findMany: jest.fn().mockResolvedValue([mockProduct({ stock: 1 })]),
             update: jest.fn(),
           },
           order: { create: jest.fn() },
@@ -240,9 +239,7 @@ describe('OrdersService', () => {
       prisma.cart.findUnique.mockResolvedValue(cart);
       redis.acquireLock.mockResolvedValue(null);
 
-      await expect(service.checkout(1, {})).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.checkout(1, {})).rejects.toThrow(ConflictException);
     });
 
     // Cupons
@@ -261,7 +258,7 @@ describe('OrdersService', () => {
       });
       prisma.couponUsage.findUnique.mockResolvedValue(null);
 
-      prisma.$transaction.mockImplementation(async (fn: Function) => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
           $queryRawUnsafe: jest.fn(),
           product: {
@@ -269,9 +266,9 @@ describe('OrdersService', () => {
             update: jest.fn(),
           },
           order: {
-            create: jest.fn().mockResolvedValue(
-              mockOrder({ discount: decimal(9.98) }),
-            ),
+            create: jest
+              .fn()
+              .mockResolvedValue(mockOrder({ discount: decimal(9.98) })),
           },
           couponUsage: { create: jest.fn() },
           cartItem: { deleteMany: jest.fn() },
@@ -319,15 +316,13 @@ describe('OrdersService', () => {
         userId: 1,
       });
 
-      await expect(
-        service.checkout(1, { couponCode: 'USED' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.checkout(1, { couponCode: 'USED' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('deve rejeitar cupom com valor mínimo não atingido', async () => {
-      const cart = mockCart([
-        mockCartItem({ price: decimal(10) }),
-      ]);
+      const cart = mockCart([mockCartItem({ price: decimal(10) })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
 
       prisma.coupon.findUnique.mockResolvedValue({
@@ -350,9 +345,9 @@ describe('OrdersService', () => {
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.coupon.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.checkout(1, { couponCode: 'FAKE' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.checkout(1, { couponCode: 'FAKE' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -360,7 +355,7 @@ describe('OrdersService', () => {
   describe('cancel', () => {
     it('deve cancelar pedido PENDING e devolver estoque', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
-      prisma.$transaction.mockImplementation(async (fn: Function) => fn(prisma));
+      prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
       prisma.order.update.mockResolvedValue(
         mockOrder({ status: OrderStatus.CANCELLED }),
       );
@@ -377,7 +372,7 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(
         mockOrder({ status: OrderStatus.PAID }),
       );
-      prisma.$transaction.mockImplementation(async (fn: Function) => fn(prisma));
+      prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
       prisma.order.update.mockResolvedValue(
         mockOrder({ status: OrderStatus.CANCELLED }),
       );
@@ -409,9 +404,7 @@ describe('OrdersService', () => {
     });
 
     it('deve rejeitar cancelamento por outro customer', async () => {
-      prisma.order.findUnique.mockResolvedValue(
-        mockOrder({ userId: 999 }),
-      );
+      prisma.order.findUnique.mockResolvedValue(mockOrder({ userId: 999 }));
 
       await expect(service.cancel(1, 1, 'CUSTOMER')).rejects.toThrow(
         ForbiddenException,
@@ -419,10 +412,8 @@ describe('OrdersService', () => {
     });
 
     it('deve permitir admin cancelar pedido de outro user', async () => {
-      prisma.order.findUnique.mockResolvedValue(
-        mockOrder({ userId: 999 }),
-      );
-      prisma.$transaction.mockImplementation(async (fn: Function) => fn(prisma));
+      prisma.order.findUnique.mockResolvedValue(mockOrder({ userId: 999 }));
+      prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
       prisma.order.update.mockResolvedValue(
         mockOrder({ status: OrderStatus.CANCELLED }),
       );
@@ -441,7 +432,6 @@ describe('OrdersService', () => {
       );
     });
   });
-
 
   // MÁQUINA DE ESTADOS
 
@@ -497,9 +487,9 @@ describe('OrdersService', () => {
         mockOrder({ status: OrderStatus.DELIVERED }),
       );
 
-      await expect(
-        service.advanceStatus(1, OrderStatus.PAID),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.advanceStatus(1, OrderStatus.PAID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('deve rejeitar transição de pedido CANCELLED', async () => {
@@ -507,9 +497,9 @@ describe('OrdersService', () => {
         mockOrder({ status: OrderStatus.CANCELLED }),
       );
 
-      await expect(
-        service.advanceStatus(1, OrderStatus.PAID),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.advanceStatus(1, OrderStatus.PAID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('deve rejeitar pedido inexistente', async () => {
@@ -560,7 +550,7 @@ describe('OrdersService', () => {
   describe('handlePaymentFailure', () => {
     it('deve cancelar pedido PENDING e devolver estoque', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
-      prisma.$transaction.mockImplementation(async (fn: Function) => fn(prisma));
+      prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
       prisma.order.update.mockResolvedValue(
         mockOrder({ status: OrderStatus.CANCELLED }),
       );
@@ -581,7 +571,6 @@ describe('OrdersService', () => {
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
-
 
   // LISTAGEM
 

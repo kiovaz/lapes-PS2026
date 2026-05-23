@@ -30,7 +30,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) { }
+  constructor(private readonly ordersService: OrdersService) {}
 
   // Checkout
 
@@ -45,16 +45,16 @@ export class OrdersController {
     status: 201,
     description: 'Pedido criado com sucesso. Retorna order + clientSecret.',
   })
-  @ApiResponse({ status: 400, description: 'Carrinho vazio ou cupom inválido.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Carrinho vazio ou cupom inválido.',
+  })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
   @ApiResponse({
     status: 409,
     description: 'Estoque insuficiente ou checkout em andamento.',
   })
-  checkout(
-    @CurrentUser() user: { userId: number },
-    @Body() dto: CheckoutDto,
-  ) {
+  checkout(@CurrentUser() user: { userId: number }, @Body() dto: CheckoutDto) {
     return this.ordersService.checkout(user.userId, dto);
   }
 

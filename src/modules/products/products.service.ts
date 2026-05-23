@@ -13,7 +13,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-  ) { }
+  ) {}
 
   // Admin
 
@@ -131,7 +131,8 @@ export class ProductsService {
       throw new NotFoundException(`Produto #${id} não encontrado.`);
     }
 
-    const detailTtlMs = Number(process.env.CACHE_PRODUCTS_DETAIL_TTL_MS) || 900_000;
+    const detailTtlMs =
+      Number(process.env.CACHE_PRODUCTS_DETAIL_TTL_MS) || 900_000;
     await this.redis.set(cacheKey, product, detailTtlMs);
     this.logger.debug(`Cache MISS → populado: ${cacheKey}`);
 

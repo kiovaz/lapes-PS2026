@@ -34,10 +34,9 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly stripe: StripeService,
-  ) { }
+  ) {}
 
   //  CHECKOUT
-
 
   async checkout(userId: number, dto: CheckoutDto) {
     if (dto.idempotencyKey) {
@@ -116,7 +115,7 @@ export class OrdersService {
       if (subtotal.lt(coupon.minOrderValue)) {
         throw new BadRequestException(
           `Valor mínimo do pedido para usar o cupom "${dto.couponCode}" ` +
-          `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
+            `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
         );
       }
       if (coupon.type === 'PERCENT') {
@@ -164,7 +163,7 @@ export class OrdersService {
             if (!product || product.stock < item.quantity) {
               throw new ConflictException(
                 `Estoque insuficiente para "${product?.name || 'produto removido'}". ` +
-                `Disponível: ${product?.stock ?? 0}, solicitado: ${item.quantity}.`,
+                  `Disponível: ${product?.stock ?? 0}, solicitado: ${item.quantity}.`,
               );
             }
           }
@@ -258,7 +257,7 @@ export class OrdersService {
     if (!CANCELLABLE_STATUSES.includes(order.status)) {
       throw new BadRequestException(
         `Pedido #${orderId} não pode ser cancelado. Status atual: ${order.status}. ` +
-        `Cancelamento só é permitido para pedidos ${CANCELLABLE_STATUSES.join(' ou ')}.`,
+          `Cancelamento só é permitido para pedidos ${CANCELLABLE_STATUSES.join(' ou ')}.`,
       );
     }
     await this.prisma.$transaction(async (tx) => {
@@ -308,7 +307,7 @@ export class OrdersService {
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
         `Transição inválida: ${order.status} → ${newStatus}. ` +
-        `Transições permitidas de ${order.status}: ${allowed.join(', ') || 'nenhuma'}.`,
+          `Transições permitidas de ${order.status}: ${allowed.join(', ') || 'nenhuma'}.`,
       );
     }
 
@@ -318,9 +317,7 @@ export class OrdersService {
       include: { items: true },
     });
 
-    this.logger.log(
-      `Pedido #${orderId}: ${order.status} → ${newStatus}`,
-    );
+    this.logger.log(`Pedido #${orderId}: ${order.status} → ${newStatus}`);
 
     return updated;
   }
@@ -394,7 +391,6 @@ export class OrdersService {
       `Webhook: Pedido #${order.id} CANCELADO por falha no pagamento (PI: ${paymentIntentId})`,
     );
   }
-
 
   //  LISTAGEM
 

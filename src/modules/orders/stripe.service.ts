@@ -22,7 +22,6 @@ export class StripeService {
    * @param metadata Dados extras vinculados ao pagamento
    */
 
-
   async createPaymentIntent(
     amountCents: number,
     metadata: Record<string, string>,
