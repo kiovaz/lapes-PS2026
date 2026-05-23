@@ -245,6 +245,126 @@ describe('OrdersService', () => {
       );
     });
 
+    // Concorrência de estoque
+
+    it('deve impedir duas requisições simultâneas do mesmo usuário (lock distribuído)', async () => {
+      const cartItem = { ...mockCartItem({ stock: 1 }), quantity: 1 };
+      const cart = mockCart([cartItem]);
+
+      redis.acquireLock
+        .mockResolvedValueOnce('lock-token-1')  // primeira requisição obtém lock
+        .mockResolvedValueOnce(null);            // segunda requisição é bloqueada
+
+      prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.order.findUnique.mockResolvedValue(null);
+
+      prisma.$transaction.mockImplementation(async (fn: Function) => {
+        const tx = {
+          $queryRawUnsafe: jest.fn(),
+          product: {
+            findMany: jest.fn().mockResolvedValue([mockProduct({ stock: 1 })]),
+            update: jest.fn(),
+          },
+          order: {
+            create: jest.fn().mockResolvedValue(mockOrder({ total: decimal(49.9) })),
+          },
+          couponUsage: { create: jest.fn() },
+          cartItem: { deleteMany: jest.fn() },
+        };
+        return fn(tx);
+      });
+
+      const [result1, result2] = await Promise.allSettled([
+        service.checkout(1, {}),
+        service.checkout(1, {}),
+      ]);
+
+      expect(result1.status).toBe('fulfilled');
+      if (result1.status === 'fulfilled') {
+        expect(result1.value.order).toBeDefined();
+      }
+      expect(result2.status).toBe('rejected');
+      if (result2.status === 'rejected') {
+        expect(result2.reason).toBeInstanceOf(ConflictException);
+        expect(result2.reason.message).toContain('Outro checkout');
+      }
+    });
+
+    it('deve rejeitar checkout de outro usuário via lock pessimista quando estoque esgota (FOR UPDATE)', async () => {
+      const cartItem1 = { ...mockCartItem({ stock: 1 }), quantity: 1 };
+      const cartItem2 = { ...mockCartItem({ stock: 1 }), quantity: 1, cartId: 2 };
+      const cartUser1 = mockCart([cartItem1]);
+      const cartUser2 = { ...mockCart([cartItem2]), id: 2, userId: 2 };
+
+      redis.acquireLock.mockResolvedValue('lock-token');
+
+      prisma.cart.findUnique
+        .mockResolvedValueOnce(cartUser1)
+        .mockResolvedValueOnce(cartUser2);
+
+      prisma.order.findUnique.mockResolvedValue(null);
+
+      let txCount = 0;
+      prisma.$transaction.mockImplementation(async (fn: Function) => {
+        txCount++;
+        const stockAfterLock = txCount === 1 ? 1 : 0;
+        const tx = {
+          $queryRawUnsafe: jest.fn(),
+          product: {
+            findMany: jest.fn().mockResolvedValue([
+              mockProduct({ stock: stockAfterLock }),
+            ]),
+            update: jest.fn(),
+          },
+          order: {
+            create: jest.fn().mockResolvedValue(mockOrder()),
+          },
+          couponUsage: { create: jest.fn() },
+          cartItem: { deleteMany: jest.fn() },
+        };
+        return fn(tx);
+      });
+
+      const result1 = await service.checkout(1, {});
+      expect(result1.order).toBeDefined();
+
+      await expect(service.checkout(2, {})).rejects.toThrow(ConflictException);
+    });
+
+    it('deve rejeitar segunda requisição dentro da transação quando estoque acaba', async () => {
+      const cart = mockCart([mockCartItem()]);
+
+      prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.order.findUnique.mockResolvedValue(null);
+      redis.acquireLock.mockResolvedValue('lock-token');
+
+      let callCount = 0;
+      prisma.$transaction.mockImplementation(async (fn: Function) => {
+        callCount++;
+        const currentStock = callCount === 1 ? 2 : 0; // primeiro vê estoque, segundo vê 0
+        const tx = {
+          $queryRawUnsafe: jest.fn(),
+          product: {
+            findMany: jest.fn().mockResolvedValue([
+              mockProduct({ stock: currentStock }),
+            ]),
+            update: jest.fn(),
+          },
+          order: {
+            create: jest.fn().mockResolvedValue(mockOrder()),
+          },
+          couponUsage: { create: jest.fn() },
+          cartItem: { deleteMany: jest.fn() },
+        };
+        return fn(tx);
+      });
+
+      const result1 = await service.checkout(1, {});
+      expect(result1.order).toBeDefined();
+
+      await expect(service.checkout(1, {})).rejects.toThrow(ConflictException);
+    });
+
     // Cupons
 
     it('deve aplicar cupom percentual corretamente', async () => {
@@ -356,7 +476,6 @@ describe('OrdersService', () => {
     });
   });
 
-  //  CANCELAMENTO
   describe('cancel', () => {
     it('deve cancelar pedido PENDING e devolver estoque', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder());
@@ -443,8 +562,6 @@ describe('OrdersService', () => {
   });
 
 
-  // MÁQUINA DE ESTADOS
-
   describe('advanceStatus', () => {
     it('deve avançar PENDING → PAID', async () => {
       prisma.order.findUnique.mockResolvedValue(
@@ -521,7 +638,6 @@ describe('OrdersService', () => {
     });
   });
 
-  // WEBHOOKS
 
   describe('handlePaymentSuccess', () => {
     it('deve marcar pedido PENDING como PAID', async () => {
@@ -583,7 +699,6 @@ describe('OrdersService', () => {
   });
 
 
-  // LISTAGEM
 
   describe('findAll', () => {
     it('deve listar pedidos do customer (apenas os seus)', async () => {
