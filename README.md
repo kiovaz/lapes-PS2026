@@ -110,8 +110,8 @@ ecommerce-lapes/
 │   │       └── auth.service.spec.ts        # Testes unitários
 │   ├── app.module.ts                   # Módulo raiz
 │   └── main.ts                         # Bootstrap + Swagger + CORS
-├── docker-compose.yml                  # 3 serviços: API + Postgres + Redis
-├── Dockerfile                          # Node 20 Alpine
+├── docker-compose.yml                  # 4 serviços: API + Postgres + Redis + Redis Commander
+├── Dockerfile                          # Multi-stage build (Node 20 Alpine)
 ├── .env.example                        # Template de variáveis
 └── package.json
 ```
@@ -183,17 +183,18 @@ Módulo de autenticação completo com registro, login e perfil protegido.
 
 ### Docker Compose
 
-3 serviços orquestrados via `docker-compose.yml` com **setup zero-config**:
+4 serviços orquestrados via `docker-compose.yml` com **setup zero-config**:
 
 | Serviço | Imagem | Porta (host) | Healthcheck |
 |---------|--------|-------------|-------------|
 | **api** | Build local (Dockerfile) | `3000` | — |
-| **db** | `postgres:16-alpine` | `5433` | `pg_isready` |
+| **db** | `postgres:16-alpine` | `5432` | `pg_isready` |
 | **redis** | `redis:7-alpine` | `6379` | `redis-cli ping` |
+| **redis-commander** | `rediscommander/redis-commander` | `8081` | — |
 
 **Automação do setup:**
-- `entrypoint.sh` aguarda Postgres via TCP, roda `prisma migrate deploy` + `prisma db seed`, e inicia a API
-- `depends_on: condition: service_healthy` garante ordem correta de inicialização
+- `depends_on: condition: service_healthy` garante que Postgres e Redis estejam prontos antes da API subir
+- `command` no serviço da API executa migrations → seed → inicia em watch mode
 - Valores padrão em todas as variáveis — funciona sem `.env`
 - Hot-reload (`npm run start:dev`) com volume mount do código fonte
 
@@ -246,29 +247,41 @@ Erros não tratados são capturados pelo `GlobalExceptionFilter` e retornados em
 # Clone e rode — só isso!
 git clone https://github.com/kiovaz/processo-seletivo-2026.git
 cd processo-seletivo-2026
-docker-compose up
+docker compose up
 ```
 
-> **Tudo é automático:** o sistema aguarda o Postgres ficar pronto, aplica as migrations, popula o banco com dados de desenvolvimento (seed) e inicia a API com hot-reload.
+> **Tudo é automático:** o `depends_on` com healthcheck garante que Postgres e Redis estejam prontos. Em seguida, o container da API aplica as migrations, popula o banco com seed e inicia com hot-reload.
 
 - 🌐 **API**: http://localhost:3000
 - 📖 **Swagger**: http://localhost:3000/docs
 - 🔑 **Login admin**: `admin@lapes.com` / `123456`
 - 🛒 **Login cliente**: `joao@email.com` / `123456`
+- 📊 **Redis Commander**: http://localhost:8081
 
 > **Nota:** O projeto funciona sem precisar criar um `.env` — valores padrão de desenvolvimento já estão configurados. Se quiser customizar, copie o `.env.example` para `.env` e ajuste.
 
-### Comandos Úteis (Makefile)
+### Guia de Comandos Docker
 
 | Comando | Descrição |
 |---------|-----------|
-| `make dev` | Sobe tudo com build |
-| `make dev-d` | Sobe tudo em background |
-| `make down` | Para todos os containers |
-| `make logs` | Acompanha logs da API em tempo real |
-| `make seed` | Re-executa o seed do banco |
-| `make reset` | Destrói tudo (inclusive dados) e recria do zero |
-| `make studio` | Abre o Prisma Studio na porta 5555 |
+| `docker compose up` | Sobe tudo (API + Postgres + Redis) com logs no terminal |
+| `docker compose up -d` | Sobe tudo em background (detached) |
+| `docker compose up -d --build` | Rebuilda a imagem e sobe em background |
+| `docker compose down` | Para e remove todos os containers |
+| `docker compose down -v` | Para tudo **e apaga os volumes** (reset total do banco) |
+| `docker compose logs -f api` | Acompanha logs da API em tempo real |
+| `docker compose restart api` | Reinicia apenas o container da API |
+
+### Comandos Prisma (dentro do container)
+
+| Comando | Descrição |
+|---------|-----------|
+| `docker exec -it ecommerce-api npx prisma studio --hostname 0.0.0.0 --port 5555` | Abre o Prisma Studio (visualizar banco na porta 5555) |
+| `docker exec -it ecommerce-api npx prisma migrate deploy` | Aplica migrations pendentes |
+| `docker exec -it ecommerce-api npx prisma db seed` | Re-executa o seed do banco |
+| `docker exec -it ecommerce-api npx prisma migrate reset --force` | **Reset total**: apaga banco, re-aplica migrations e seed |
+
+> **Dica para apresentação:** Para visualizar o banco ao vivo, rode o comando do Prisma Studio acima e acesse http://localhost:5555.
 
 ### Sem Docker (desenvolvimento local)
 

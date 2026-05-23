@@ -5,6 +5,7 @@
   "author": "Caio Vasconcelos / Edgar Klewert",
   "license": "MIT",
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -14,14 +15,16 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" --no-error-on-unmatched-pattern",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:generate": "npx prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:studio": "npx prisma studio",
-    "prisma:studio:docker": "docker exec -it ecommerce-api npx prisma studio --hostname 0.0.0.0 --port 5555",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:reset": "prisma migrate reset --force",
+    "prisma:seed": "prisma db seed",
+    "prisma:studio": "prisma studio",
+    "prisma:studio:docker": "docker exec -it ecommerce-api prisma studio --hostname 0.0.0.0 --port 5555",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -40,6 +43,7 @@
     "passport-jwt": "^4.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
+    "stripe": "^22.1.1",
     "winston": "^3.11.0"
   },
   "devDependencies": {
@@ -50,6 +54,7 @@
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "@types/passport-jwt": "^4.0.0",
+    "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",

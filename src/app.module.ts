@@ -8,7 +8,7 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CartModule } from './modules/cart/cart.module';
-// import { OrdersModule } from './modules/orders/orders.module';
+import { OrdersModule } from './modules/orders/orders.module';
 // import { CouponsModule } from './modules/coupons/coupons.module';
 
 @Module({
@@ -24,12 +24,11 @@ import { CartModule } from './modules/cart/cart.module';
     // PRISMA + REDIS
     PrismaModule,
     RedisModule,
-
     // MÓDULOS DE DOMÍNIO
     AuthModule,
     ProductsModule,
     CartModule,
-    // OrdersModule,
+    OrdersModule,
     // CouponsModule,
   ],
 })

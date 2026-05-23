@@ -62,6 +62,9 @@ CREATE TABLE "orders" (
     "userId" INTEGER NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
     "total" DECIMAL(10,2) NOT NULL,
+    "discount" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "idempotencyKey" TEXT,
+    "stripePaymentIntentId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "couponId" INTEGER,
@@ -110,6 +113,12 @@ CREATE UNIQUE INDEX "carts_userId_key" ON "carts"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cart_items_cartId_productId_key" ON "cart_items"("cartId", "productId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "orders_idempotencyKey_key" ON "orders"("idempotencyKey");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "orders_stripePaymentIntentId_key" ON "orders"("stripePaymentIntentId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "coupons_code_key" ON "coupons"("code");
