@@ -9,7 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrdersModule } from './modules/orders/orders.module';
-// import { CouponsModule } from './modules/coupons/coupons.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { OrdersModule } from './modules/orders/orders.module';
     ProductsModule,
     CartModule,
     OrdersModule,
-    // CouponsModule,
+    CouponsModule,
   ],
 })
 export class AppModule implements NestModule {
