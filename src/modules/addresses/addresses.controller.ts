@@ -33,7 +33,10 @@ export class AddressesController {
   @Post()
   @ApiOperation({ summary: 'Cadastra um novo endereço' })
   @ApiResponse({ status: 201, description: 'Endereço criado com sucesso.' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos ou limite de endereços atingido.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou limite de endereços atingido.',
+  })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
   create(
     @CurrentUser() user: { userId: number },
@@ -44,7 +47,10 @@ export class AddressesController {
 
   @Get()
   @ApiOperation({ summary: 'Lista todos os endereços do usuário' })
-  @ApiResponse({ status: 200, description: 'Endereços retornados com sucesso.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Endereços retornados com sucesso.',
+  })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
   findAll(@CurrentUser() user: { userId: number }) {
     return this.addressesService.findAll(user.userId);

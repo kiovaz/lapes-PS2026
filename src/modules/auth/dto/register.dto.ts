@@ -42,7 +42,9 @@ export class RegisterDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'O CPF é obrigatório' })
-  @Matches(/^\d{11}$/, { message: 'O CPF deve conter exatamente 11 dígitos numéricos' })
+  @Matches(/^\d{11}$/, {
+    message: 'O CPF deve conter exatamente 11 dígitos numéricos',
+  })
   @IsCpfValid({ message: 'CPF inválido. Verifique os dígitos informados.' })
   cpf: string;
 
@@ -61,7 +63,10 @@ export class RegisterDto {
     example: '1990-05-15',
     description: 'Data de nascimento no formato ISO (YYYY-MM-DD)',
   })
-  @IsDateString({}, { message: 'Informe uma data de nascimento válida (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Informe uma data de nascimento válida (YYYY-MM-DD)' },
+  )
   @IsNotEmpty({ message: 'A data de nascimento é obrigatória' })
   birthDate: string;
 

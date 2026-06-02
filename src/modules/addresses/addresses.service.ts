@@ -12,7 +12,7 @@ const MAX_ADDRESSES_PER_USER = 5;
 
 @Injectable()
 export class AddressesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateAddressDto) {
     const count = await this.prisma.address.count({ where: { userId } });

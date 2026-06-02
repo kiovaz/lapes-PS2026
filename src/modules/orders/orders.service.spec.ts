@@ -531,13 +531,11 @@ describe('OrdersService', () => {
     it('deve rejeitar checkout com addressId de outro usuário', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
-      prisma.address.findUnique.mockResolvedValue(
-        mockAddress({ userId: 999 }),
-      );
+      prisma.address.findUnique.mockResolvedValue(mockAddress({ userId: 999 }));
 
-      await expect(
-        service.checkout(1, { addressId: 1 }),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.checkout(1, { addressId: 1 })).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('deve rejeitar checkout com addressId inexistente', async () => {
@@ -545,9 +543,9 @@ describe('OrdersService', () => {
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.address.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.checkout(1, { addressId: 999 }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.checkout(1, { addressId: 999 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

@@ -14,7 +14,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async register(dto: RegisterDto) {
     const emailExists = await this.prisma.user.findUnique({
@@ -77,7 +77,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Usuário não encontrado.');
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-var
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
 
     return {

@@ -5,7 +5,6 @@ import {
   IsBoolean,
   Matches,
   MaxLength,
-  MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -35,7 +34,9 @@ export class CreateAddressDto {
   })
   @IsOptional()
   @IsString()
-  @MaxLength(100, { message: 'O complemento deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'O complemento deve ter no máximo 100 caracteres',
+  })
   complement?: string;
 
   @ApiProperty({
@@ -63,7 +64,8 @@ export class CreateAddressDto {
   @IsString()
   @IsNotEmpty({ message: 'O estado é obrigatório' })
   @Matches(/^[A-Z]{2}$/, {
-    message: 'O estado deve ser uma UF válida com 2 letras maiúsculas (ex: SP, RJ, MG)',
+    message:
+      'O estado deve ser uma UF válida com 2 letras maiúsculas (ex: SP, RJ, MG)',
   })
   state: string;
 
