@@ -34,7 +34,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly stripe: StripeService,
-  ) {}
+  ) { }
 
   //  CHECKOUT
 
@@ -74,6 +74,30 @@ export class OrdersService {
           `Produto "${item.product.name}" não está mais disponível.`,
         );
       }
+    }
+    let address;
+    if (dto.addressId) {
+      address = await this.prisma.address.findUnique({
+        where: { id: dto.addressId },
+      });
+      if (!address) {
+        throw new NotFoundException(
+          `Endereço #${dto.addressId} não encontrado.`,
+        );
+      }
+      if (address.userId !== userId) {
+        throw new ForbiddenException('Você não tem acesso a este endereço.');
+      }
+    } else {
+      address = await this.prisma.address.findFirst({
+        where: { userId, isDefault: true },
+      });
+    }
+
+    if (!address) {
+      throw new BadRequestException(
+        'Cadastre um endereço de entrega antes de finalizar a compra.',
+      );
     }
 
     let subtotal = new Prisma.Decimal(0);
@@ -115,7 +139,7 @@ export class OrdersService {
       if (subtotal.lt(coupon.minOrderValue)) {
         throw new BadRequestException(
           `Valor mínimo do pedido para usar o cupom "${dto.couponCode}" ` +
-            `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
+          `é R$${coupon.minOrderValue}. Subtotal atual: R$${subtotal}.`,
         );
       }
       if (coupon.type === 'PERCENT') {
@@ -133,7 +157,6 @@ export class OrdersService {
 
     const total = subtotal.sub(discount);
 
-    // ── 6. Lock distribuído (Redis)
     const lockKey = `checkout:user:${userId}`;
     const lockTtl = Number(process.env.CHECKOUT_LOCK_TTL_MS) || 30000;
     const lockToken = await this.redis.acquireLock(lockKey, lockTtl);
@@ -163,7 +186,7 @@ export class OrdersService {
             if (!product || product.stock < item.quantity) {
               throw new ConflictException(
                 `Estoque insuficiente para "${product?.name || 'produto removido'}". ` +
-                  `Disponível: ${product?.stock ?? 0}, solicitado: ${item.quantity}.`,
+                `Disponível: ${product?.stock ?? 0}, solicitado: ${item.quantity}.`,
               );
             }
           }
@@ -180,6 +203,13 @@ export class OrdersService {
               discount,
               couponId,
               idempotencyKey: dto.idempotencyKey || null,
+              // Snapshot do endereço de entrega
+              shippingStreet: address.street,
+              shippingComplement: address.complement,
+              shippingNeighborhood: address.neighborhood,
+              shippingCity: address.city,
+              shippingState: address.state,
+              shippingZipCode: address.zipCode,
               items: {
                 create: cart.items.map((item) => ({
                   productId: item.productId,
@@ -257,7 +287,7 @@ export class OrdersService {
     if (!CANCELLABLE_STATUSES.includes(order.status)) {
       throw new BadRequestException(
         `Pedido #${orderId} não pode ser cancelado. Status atual: ${order.status}. ` +
-          `Cancelamento só é permitido para pedidos ${CANCELLABLE_STATUSES.join(' ou ')}.`,
+        `Cancelamento só é permitido para pedidos ${CANCELLABLE_STATUSES.join(' ou ')}.`,
       );
     }
     await this.prisma.$transaction(async (tx) => {
@@ -307,7 +337,7 @@ export class OrdersService {
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
         `Transição inválida: ${order.status} → ${newStatus}. ` +
-          `Transições permitidas de ${order.status}: ${allowed.join(', ') || 'nenhuma'}.`,
+        `Transições permitidas de ${order.status}: ${allowed.join(', ') || 'nenhuma'}.`,
       );
     }
 
