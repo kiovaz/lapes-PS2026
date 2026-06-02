@@ -1,7 +1,3 @@
-
-// SCHEMA DO BANCO — E-COMMERCE LAPES
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,12 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// === USUÁRIOS ===
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
-  name      String
+  firstName String
+  lastName  String
+  cpf       String   @unique
+  phone     String
+  birthDate DateTime
   role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -24,8 +23,28 @@ model User {
   cart        Cart?
   orders      Order[]
   couponUsage CouponUsage[]
+  addresses   Address[]
 
   @@map("users")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  label        String   @default("Casa")
+  street       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String   @db.Char(2)
+  zipCode      String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("addresses")
 }
 
 enum Role {
@@ -33,7 +52,6 @@ enum Role {
   CUSTOMER
 }
 
-// === PRODUTOS ===
 model Product {
   id          Int       @id @default(autoincrement())
   name        String
@@ -52,7 +70,6 @@ model Product {
   @@map("products")
 }
 
-// === CARRINHO ===
 model Cart {
   id        Int      @id @default(autoincrement())
   userId    Int      @unique
@@ -78,7 +95,6 @@ model CartItem {
   @@map("cart_items")
 }
 
-// === PEDIDOS ===
 model Order {
   id                    Int         @id @default(autoincrement())
   userId                Int
@@ -87,6 +103,15 @@ model Order {
   discount              Decimal     @db.Decimal(10, 2) @default(0)
   idempotencyKey        String?     @unique
   stripePaymentIntentId String?     @unique
+
+  // Snapshot do endereço de entrega
+  shippingStreet        String?
+  shippingComplement    String?
+  shippingNeighborhood  String?
+  shippingCity          String?
+  shippingState         String?
+  shippingZipCode       String?
+
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
 
@@ -124,8 +149,8 @@ model Coupon {
   id            Int        @id @default(autoincrement())
   code          String     @unique
   type          CouponType
-  value         Decimal   @db.Decimal(10, 2)                   // percentual (ex: 10) ou valor fixo (ex: 25.00)
-  minOrderValue Decimal   @db.Decimal(10, 2)      @default(0)  // valor minimo do pedido pra aplicar
+  value         Decimal   @db.Decimal(10, 2)
+  minOrderValue Decimal   @db.Decimal(10, 2)      @default(0)
   expiresAt     DateTime
   createdAt     DateTime   @default(now())
 

@@ -54,6 +54,12 @@ const mockOrder = (overrides = {}) => ({
   idempotencyKey: null,
   stripePaymentIntentId: 'pi_test_123',
   couponId: null,
+  shippingStreet: 'Rua das Flores, 123',
+  shippingComplement: 'Apto 42',
+  shippingNeighborhood: 'Centro',
+  shippingCity: 'São Paulo',
+  shippingState: 'SP',
+  shippingZipCode: '01001000',
   createdAt: new Date(),
   updatedAt: new Date(),
   items: [
@@ -65,6 +71,22 @@ const mockOrder = (overrides = {}) => ({
       priceAtPurchase: decimal(49.9),
     },
   ],
+  ...overrides,
+});
+
+const mockAddress = (overrides = {}) => ({
+  id: 1,
+  userId: 1,
+  label: 'Casa',
+  street: 'Rua das Flores, 123',
+  complement: 'Apto 42',
+  neighborhood: 'Centro',
+  city: 'São Paulo',
+  state: 'SP',
+  zipCode: '01001000',
+  isDefault: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
   ...overrides,
 });
 
@@ -96,6 +118,10 @@ const mockPrismaService = () => ({
   },
   $transaction: jest.fn(),
   $queryRawUnsafe: jest.fn(),
+  address: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+  },
 });
 
 const mockRedisService = () => ({
@@ -144,6 +170,7 @@ describe('OrdersService', () => {
 
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.order.findUnique.mockResolvedValue(null); // sem idempotência prévia
+      prisma.address.findFirst.mockResolvedValue(mockAddress()); // endereço default
 
       // Mock
       prisma.$transaction.mockImplementation(async (fn: any) => {
@@ -190,6 +217,7 @@ describe('OrdersService', () => {
 
     it('deve rejeitar checkout com carrinho vazio', async () => {
       prisma.cart.findUnique.mockResolvedValue(mockCart([]));
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       await expect(service.checkout(1, {})).rejects.toThrow(
         BadRequestException,
@@ -198,6 +226,7 @@ describe('OrdersService', () => {
 
     it('deve rejeitar checkout com carrinho inexistente', async () => {
       prisma.cart.findUnique.mockResolvedValue(null);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       await expect(service.checkout(1, {})).rejects.toThrow(
         BadRequestException,
@@ -207,6 +236,7 @@ describe('OrdersService', () => {
     it('deve rejeitar checkout com produto soft-deleted', async () => {
       const cart = mockCart([mockCartItem({ deletedAt: new Date() })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       await expect(service.checkout(1, {})).rejects.toThrow(
         BadRequestException,
@@ -216,6 +246,7 @@ describe('OrdersService', () => {
     it('deve rejeitar checkout com estoque insuficiente', async () => {
       const cart = mockCart([mockCartItem({ stock: 10 })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
@@ -237,6 +268,7 @@ describe('OrdersService', () => {
     it('deve rejeitar quando lock do Redis não é obtido', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
       redis.acquireLock.mockResolvedValue(null);
 
       await expect(service.checkout(1, {})).rejects.toThrow(ConflictException);
@@ -254,6 +286,7 @@ describe('OrdersService', () => {
 
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.order.findUnique.mockResolvedValue(null);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.$transaction.mockImplementation(async (fn: any) => {
         const tx = {
@@ -306,6 +339,7 @@ describe('OrdersService', () => {
         .mockResolvedValueOnce(cartUser2);
 
       prisma.order.findUnique.mockResolvedValue(null);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       let txCount = 0;
       prisma.$transaction.mockImplementation(async (fn: any) => {
@@ -339,6 +373,7 @@ describe('OrdersService', () => {
 
       prisma.cart.findUnique.mockResolvedValue(cart);
       prisma.order.findUnique.mockResolvedValue(null);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
       redis.acquireLock.mockResolvedValue('lock-token');
 
       let callCount = 0;
@@ -373,6 +408,7 @@ describe('OrdersService', () => {
     it('deve aplicar cupom percentual corretamente', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.coupon.findUnique.mockResolvedValue({
         id: 1,
@@ -409,6 +445,7 @@ describe('OrdersService', () => {
     it('deve rejeitar cupom expirado', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.coupon.findUnique.mockResolvedValue({
         id: 1,
@@ -427,6 +464,7 @@ describe('OrdersService', () => {
     it('deve rejeitar cupom já usado pelo usuário', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.coupon.findUnique.mockResolvedValue({
         id: 1,
@@ -450,6 +488,7 @@ describe('OrdersService', () => {
     it('deve rejeitar cupom com valor mínimo não atingido', async () => {
       const cart = mockCart([mockCartItem({ price: decimal(10) })]);
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
 
       prisma.coupon.findUnique.mockResolvedValue({
         id: 1,
@@ -469,9 +508,42 @@ describe('OrdersService', () => {
     it('deve rejeitar cupom inexistente', async () => {
       const cart = mockCart();
       prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
       prisma.coupon.findUnique.mockResolvedValue(null);
 
       await expect(service.checkout(1, { couponCode: 'FAKE' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    // Endereço de entrega
+
+    it('deve rejeitar checkout sem endereço cadastrado', async () => {
+      const cart = mockCart();
+      prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findFirst.mockResolvedValue(null);
+
+      await expect(service.checkout(1, {})).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('deve rejeitar checkout com addressId de outro usuário', async () => {
+      const cart = mockCart();
+      prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findUnique.mockResolvedValue(mockAddress({ userId: 999 }));
+
+      await expect(service.checkout(1, { addressId: 1 })).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('deve rejeitar checkout com addressId inexistente', async () => {
+      const cart = mockCart();
+      prisma.cart.findUnique.mockResolvedValue(cart);
+      prisma.address.findUnique.mockResolvedValue(null);
+
+      await expect(service.checkout(1, { addressId: 999 })).rejects.toThrow(
         NotFoundException,
       );
     });

@@ -37,20 +37,30 @@ describe('AuthService', () => {
 
   describe('register', () => {
     const registerDto = {
-      name: 'Edgar Klewert',
-      email: 'edgarklewert@email.com',
+      firstName: 'João',
+      lastName: 'Silva',
+      email: 'joao@email.com',
+      cpf: '11144477735',
+      phone: '21988887777',
+      birthDate: '1995-06-20',
       password: '123456',
     };
 
     it('deve registrar um novo usuário e retornar token + dados do user', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
 
       const createdUser = {
         id: 1,
-        name: 'Edgar Klewert',
-        email: 'edgarklewert@email.com',
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
+        cpf: '11144477735',
+        phone: '21988887777',
+        birthDate: new Date('1995-06-20'),
         password: 'hashed-password',
         role: 'CUSTOMER',
       };
@@ -59,13 +69,20 @@ describe('AuthService', () => {
       const result = await service.register(registerDto);
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: 'edgarklewert@email.com' },
+        where: { email: 'joao@email.com' },
+      });
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf: '11144477735' },
       });
       expect(bcrypt.hash).toHaveBeenCalledWith('123456', 10);
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
-          name: 'Edgar Klewert',
-          email: 'edgarklewert@email.com',
+          firstName: 'João',
+          lastName: 'Silva',
+          email: 'joao@email.com',
+          cpf: '11144477735',
+          phone: '21988887777',
+          birthDate: new Date('1995-06-20'),
           password: 'hashed-password',
         },
       });
@@ -74,8 +91,10 @@ describe('AuthService', () => {
         access_token: 'fake-jwt-token',
         user: {
           id: 1,
-          name: 'Edgar Klewert',
-          email: 'edgarklewert@email.com',
+          firstName: 'João',
+          lastName: 'Silva',
+          fullName: 'João Silva',
+          email: 'joao@email.com',
           role: 'CUSTOMER',
         },
       });
@@ -84,7 +103,7 @@ describe('AuthService', () => {
     it('deve lançar ConflictException (409) se o email já existe', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 1,
-        email: 'edgarklewert@email.com',
+        email: 'joao@email.com',
       });
 
       await expect(service.register(registerDto)).rejects.toThrow(
@@ -93,15 +112,30 @@ describe('AuthService', () => {
 
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
+
+    it('deve lançar ConflictException (409) se o CPF já existe', async () => {
+      // Email não existe, mas CPF já existe
+      mockPrisma.user.findUnique
+        .mockResolvedValueOnce(null) // email check
+        .mockResolvedValueOnce({ id: 2, cpf: '11144477735' }); // cpf check
+
+      await expect(service.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    });
   });
+
   describe('login', () => {
-    const loginDto = { email: 'edgarklewert@email.com', password: '123456' };
+    const loginDto = { email: 'joao@email.com', password: '123456' };
 
     it('deve fazer login com sucesso e retornar token + dados do user', async () => {
       const existingUser = {
         id: 1,
-        name: 'Edgar Klewert',
-        email: 'edgarklewert@email.com',
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
         password: 'hashed-password',
         role: 'CUSTOMER',
       };
@@ -115,8 +149,10 @@ describe('AuthService', () => {
         access_token: 'fake-jwt-token',
         user: {
           id: 1,
-          name: 'Edgar Klewert',
-          email: 'edgarklewert@email.com',
+          firstName: 'João',
+          lastName: 'Silva',
+          fullName: 'João Silva',
+          email: 'joao@email.com',
           role: 'CUSTOMER',
         },
       });
@@ -135,7 +171,7 @@ describe('AuthService', () => {
     it('deve lançar UnauthorizedException (401) se a senha está incorreta', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 1,
-        email: 'edgarklewert@email.com',
+        email: 'joao@email.com',
         password: 'hashed-password',
       });
 
@@ -148,11 +184,15 @@ describe('AuthService', () => {
   });
 
   describe('getProfile', () => {
-    it('deve retornar o perfil do usuário SEM o campo password', async () => {
+    it('deve retornar o perfil do usuário SEM o campo password e COM fullName', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 1,
-        name: 'Edgar Klewert',
-        email: 'edgarklewert@email.com',
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
+        cpf: '11144477735',
+        phone: '21988887777',
+        birthDate: new Date('1995-06-20'),
         password: 'hashed-password',
         role: 'CUSTOMER',
         createdAt: new Date('2026-01-01'),
@@ -162,11 +202,17 @@ describe('AuthService', () => {
       const result = await service.getProfile(1);
 
       expect(result).not.toHaveProperty('password');
+      expect(result.fullName).toBe('João Silva');
 
       expect(result).toEqual({
         id: 1,
-        name: 'Edgar Klewert',
-        email: 'edgarklewert@email.com',
+        firstName: 'João',
+        lastName: 'Silva',
+        fullName: 'João Silva',
+        email: 'joao@email.com',
+        cpf: '11144477735',
+        phone: '21988887777',
+        birthDate: new Date('1995-06-20'),
         role: 'CUSTOMER',
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01'),

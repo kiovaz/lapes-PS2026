@@ -13,14 +13,19 @@ async function main() {
   await prisma.cart.deleteMany();
   await prisma.coupon.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.address.deleteMany();
   await prisma.user.deleteMany();
 
   const hashedPassword = await bcrypt.hash('123456', 10);
 
   const admin = await prisma.user.create({
     data: {
-      name: 'Admin',
-      email: 'admin@lapes.com',
+      firstName: 'Caio',
+      lastName: 'Vasconcelos',
+      email: 'caiovasconcelos01@live.com',
+      cpf: '52998224725',
+      phone: '11999990000',
+      birthDate: new Date('1990-01-15'),
       password: hashedPassword,
       role: Role.ADMIN,
     },
@@ -28,8 +33,12 @@ async function main() {
 
   const customer = await prisma.user.create({
     data: {
-      name: 'João Cliente',
-      email: 'joao@email.com',
+      firstName: 'Edgar',
+      lastName: 'Klewert',
+      email: 'edgar@email.com',
+      cpf: '11144477735',
+      phone: '21988887777',
+      birthDate: new Date('1995-06-20'),
       password: hashedPassword,
       role: Role.CUSTOMER,
     },
@@ -37,55 +46,99 @@ async function main() {
 
   console.log('✅ Usuários criados');
 
+  // Endereços
+  await prisma.address.create({
+    data: {
+      userId: customer.id,
+      label: 'Casa',
+      street: 'Rua das Flores, 123',
+      complement: 'Apto 42',
+      neighborhood: 'Centro',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01001000',
+      isDefault: true,
+    },
+  });
+
+  await prisma.address.create({
+    data: {
+      userId: customer.id,
+      label: 'Trabalho',
+      street: 'Av. Paulista, 1000',
+      complement: 'Sala 301',
+      neighborhood: 'Bela Vista',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01310100',
+      isDefault: false,
+    },
+  });
+
+  await prisma.address.create({
+    data: {
+      userId: admin.id,
+      label: 'Casa',
+      street: 'Rua Augusta, 500',
+      neighborhood: 'Consolação',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01304001',
+      isDefault: true,
+    },
+  });
+
+  console.log('✅ Endereços criados');
+
   const products = await Promise.all([
     prisma.product.create({
       data: {
-        name: 'Camiseta Preta',
-        description: 'Camiseta básica 100% algodão',
-        price: 49.90,
+        name: 'O Senhor dos Anéis',
+        description: 'Trilogia completa de J.R.R. Tolkien em edição especial',
+        price: 89.90,
         stock: 50,
-        category: 'roupas',
-        image: 'https://placeholder.com/camiseta.jpg',
+        category: 'fantasia',
+        image: 'https://placeholder.com/senhor-dos-aneis.jpg',
       },
     }),
     prisma.product.create({
       data: {
-        name: 'Boné Azul',
-        description: 'Boné aba reta ajustável',
-        price: 29.90,
+        name: 'Clean Code',
+        description: 'Código limpo: habilidades práticas do Agile Software — Robert C. Martin',
+        price: 59.90,
         stock: 25,
-        category: 'acessorios',
-        image: 'https://placeholder.com/bone.jpg',
+        category: 'tecnologia',
+        image: 'https://placeholder.com/clean-code.jpg',
       },
     }),
     prisma.product.create({
       data: {
-        name: 'Tênis Branco',
-        description: 'Tênis casual confortável',
-        price: 199.90,
+        name: 'Sapiens',
+        description: 'Uma breve história da humanidade — Yuval Noah Harari',
+        price: 44.90,
         stock: 10,
-        category: 'calcados',
-        image: 'https://placeholder.com/tenis.jpg',
+        category: 'historia',
+        image: 'https://placeholder.com/sapiens.jpg',
       },
     }),
     prisma.product.create({
       data: {
-        name: 'Mochila Notebook',
-        description: 'Mochila impermeável para notebook 15 polegadas',
-        price: 149.90,
+        name: 'Design Patterns',
+        description: 'Padrões de projeto: soluções reutilizáveis — GoF',
+        price: 79.90,
         stock: 5,
-        category: 'acessorios',
-        image: 'https://placeholder.com/mochila.jpg',
+        category: 'tecnologia',
+        image: 'https://placeholder.com/design-patterns.jpg',
       },
     }),
     prisma.product.create({
       data: {
-        name: 'Calça Jeans',
-        description: 'Calça jeans slim fit',
-        price: 119.90,
+        name: '1984',
+        description: 'Romance distópico clássico de George Orwell',
+        price: 29.90,
         stock: 2,
-        category: 'roupas',
-        image: 'https://placeholder.com/calca.jpg',
+        category: 'ficcao',
+        image: 'https://placeholder.com/1984.jpg',
       },
     }),
   ]);

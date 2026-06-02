@@ -17,12 +17,20 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const userExists = await this.prisma.user.findUnique({
+    const emailExists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
-    if (userExists) {
+    if (emailExists) {
       throw new ConflictException('Este email já está em uso.');
+    }
+
+    const cpfExists = await this.prisma.user.findUnique({
+      where: { cpf: dto.cpf },
+    });
+
+    if (cpfExists) {
+      throw new ConflictException('Este CPF já está cadastrado.');
     }
 
     const saltRounds = 10;
@@ -30,8 +38,12 @@ export class AuthService {
 
     const newUser = await this.prisma.user.create({
       data: {
-        name: dto.name,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
         email: dto.email,
+        cpf: dto.cpf,
+        phone: dto.phone,
+        birthDate: new Date(dto.birthDate),
         password: hashedPassword,
       },
     });
@@ -68,12 +80,16 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
 
-    return userWithoutPassword;
+    return {
+      ...userWithoutPassword,
+      fullName: `${user.firstName} ${user.lastName}`,
+    };
   }
 
   private generateToken(user: {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     role: string;
     password: string;
@@ -88,7 +104,9 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`,
         email: user.email,
         role: user.role,
       },

@@ -75,6 +75,30 @@ export class OrdersService {
         );
       }
     }
+    let address;
+    if (dto.addressId) {
+      address = await this.prisma.address.findUnique({
+        where: { id: dto.addressId },
+      });
+      if (!address) {
+        throw new NotFoundException(
+          `Endereço #${dto.addressId} não encontrado.`,
+        );
+      }
+      if (address.userId !== userId) {
+        throw new ForbiddenException('Você não tem acesso a este endereço.');
+      }
+    } else {
+      address = await this.prisma.address.findFirst({
+        where: { userId, isDefault: true },
+      });
+    }
+
+    if (!address) {
+      throw new BadRequestException(
+        'Cadastre um endereço de entrega antes de finalizar a compra.',
+      );
+    }
 
     let subtotal = new Prisma.Decimal(0);
     for (const item of cart.items) {
@@ -133,7 +157,6 @@ export class OrdersService {
 
     const total = subtotal.sub(discount);
 
-    // ── 6. Lock distribuído (Redis)
     const lockKey = `checkout:user:${userId}`;
     const lockTtl = Number(process.env.CHECKOUT_LOCK_TTL_MS) || 30000;
     const lockToken = await this.redis.acquireLock(lockKey, lockTtl);
@@ -180,6 +203,13 @@ export class OrdersService {
               discount,
               couponId,
               idempotencyKey: dto.idempotencyKey || null,
+              // Snapshot do endereço de entrega
+              shippingStreet: address.street,
+              shippingComplement: address.complement,
+              shippingNeighborhood: address.neighborhood,
+              shippingCity: address.city,
+              shippingState: address.state,
+              shippingZipCode: address.zipCode,
               items: {
                 create: cart.items.map((item) => ({
                   productId: item.productId,
