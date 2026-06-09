@@ -4,11 +4,14 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -26,15 +29,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           ? exceptionResponse
           : (exceptionResponse as any).message || exceptionResponse;
     }
-    console.error(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        method: request.method,
-        statusCode: status,
-        error: exception instanceof Error ? exception.message : 'Unknown error',
-      }),
-    );
+
+    const logPayload = {
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      statusCode: status,
+      error: exception instanceof Error ? exception.message : 'Unknown error',
+    };
+
+    if (status >= 500) {
+      // Erros internos: loga com stack trace completo para debugging
+      this.logger.error(
+        JSON.stringify(logPayload),
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    } else {
+      this.logger.warn(JSON.stringify(logPayload));
+    }
+
+    // Resposta ao cliente — NUNCA inclui stack trace
     response.status(status).json({
       statusCode: status,
       message: message,

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -10,6 +10,8 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -56,5 +58,40 @@ export class AuthController {
     @CurrentUser() user: { userId: number; email: string; role: string },
   ) {
     return this.authService.getProfile(user.userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  @ApiOperation({
+    summary: 'Atualiza as informações do perfil do usuário logado',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Perfil atualizado com sucesso (sem a senha).',
+  })
+  @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  updateProfile(
+    @CurrentUser() user: { userId: number; email: string; role: string },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user.userId, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/password')
+  @ApiOperation({ summary: 'Altera a senha do usuário logado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Senha alterada com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'A senha atual está incorreta.' })
+  @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  changePassword(
+    @CurrentUser() user: { userId: number; email: string; role: string },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(user.userId, dto);
   }
 }
