@@ -27,6 +27,7 @@
     "docker:down": "docker compose down"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.0.0",

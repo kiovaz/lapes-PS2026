@@ -72,11 +72,13 @@ export class ProductsService {
       return cached;
     }
 
-    // Monta o where
     const where: Record<string, unknown> = { deletedAt: null };
 
     if (filters.search) {
-      where.name = { contains: filters.search, mode: 'insensitive' };
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
     }
     if (filters.category) {
       where.category = filters.category;
@@ -155,12 +157,39 @@ export class ProductsService {
 
   private async invalidateListCache() {
     const deleted = await this.redis.delByPattern('products:list:*');
+    await this.redis.del('products:categories');
     if (deleted > 0)
-      this.logger.debug(`Cache invalidado: ${deleted} chave(s) de lista`);
+      this.logger.debug(
+        `Cache invalidado: ${deleted} chave(s) de lista + categorias`,
+      );
   }
 
   private hashFilters(filters: FilterProductsDto): string {
     const sorted = JSON.stringify(filters, Object.keys(filters).sort());
     return createHash('md5').update(sorted).digest('hex');
+  }
+
+  async getCategories(): Promise<string[]> {
+    const cacheKey = 'products:categories';
+    const cached = await this.redis.get<string[]>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache HIT: ${cacheKey}`);
+      return cached;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { deletedAt: null },
+      select: { category: true },
+      distinct: ['category'],
+      orderBy: { category: 'asc' },
+    });
+
+    const categories = products.map((p) => p.category);
+
+    const ttlMs = Number(process.env.CACHE_PRODUCTS_LIST_TTL_MS) || 600_000;
+    await this.redis.set(cacheKey, categories, ttlMs);
+    this.logger.debug(`Cache MISS → populado: ${cacheKey}`);
+
+    return categories;
   }
 }

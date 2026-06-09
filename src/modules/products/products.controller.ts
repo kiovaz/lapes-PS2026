@@ -33,8 +33,6 @@ import { Role } from '@prisma/client';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  // Rotas Públicas
-
   @Get()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Lista produtos com filtros e paginação' })
@@ -46,6 +44,17 @@ export class ProductsController {
     return this.productsService.findAll(filters);
   }
 
+  @Get('categories')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Lista todas as categorias disponíveis' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de categorias retornada com sucesso.',
+  })
+  getCategories() {
+    return this.productsService.getCategories();
+  }
+
   @Get(':id')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Retorna o detalhe de um produto' })
@@ -54,8 +63,6 @@ export class ProductsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.findOne(id);
   }
-
-  // Rotas Admin
 
   @Post()
   @ApiBearerAuth()

@@ -135,7 +135,7 @@ describe('ProductsService', () => {
       expect(whereArg.price).toEqual({ gte: 30, lte: 100 });
     });
 
-    it('deve aplicar busca por nome (search)', async () => {
+    it('deve aplicar busca por nome e descrição (search)', async () => {
       mockRedis.get.mockResolvedValue(null);
       mockPrisma.product.findMany.mockResolvedValue([]);
       mockPrisma.product.count.mockResolvedValue(0);
@@ -143,10 +143,10 @@ describe('ProductsService', () => {
       await service.findAll({ search: 'camiseta' });
 
       const whereArg = mockPrisma.product.findMany.mock.calls[0][0].where;
-      expect(whereArg.name).toEqual({
-        contains: 'camiseta',
-        mode: 'insensitive',
-      });
+      expect(whereArg.OR).toEqual([
+        { name: { contains: 'camiseta', mode: 'insensitive' } },
+        { description: { contains: 'camiseta', mode: 'insensitive' } },
+      ]);
     });
 
     it('deve aplicar paginação (page + limit) e retornar meta com totalPages', async () => {
