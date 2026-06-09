@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
+  await prisma.wishlistItem.deleteMany();
   await prisma.couponUsage.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
@@ -98,7 +99,7 @@ async function main() {
         price: 89.90,
         stock: 50,
         category: 'fantasia',
-        image: 'https://placeholder.com/senhor-dos-aneis.jpg',
+        image: 'https://i.imgur.com/t27Zq3t.jpeg',
       },
     }),
     prisma.product.create({
@@ -108,7 +109,7 @@ async function main() {
         price: 59.90,
         stock: 25,
         category: 'tecnologia',
-        image: 'https://placeholder.com/clean-code.jpg',
+        image: 'https://i.imgur.com/vXotBRy.jpeg',
       },
     }),
     prisma.product.create({
@@ -118,7 +119,7 @@ async function main() {
         price: 44.90,
         stock: 10,
         category: 'historia',
-        image: 'https://placeholder.com/sapiens.jpg',
+        image: 'https://i.imgur.com/62Phlce.jpeg',
       },
     }),
     prisma.product.create({
@@ -138,7 +139,7 @@ async function main() {
         price: 29.90,
         stock: 2,
         category: 'ficcao',
-        image: 'https://placeholder.com/1984.jpg',
+        image: 'https://i.imgur.com/5zapcYS.jpeg',
       },
     }),
   ]);
@@ -180,6 +181,16 @@ async function main() {
   });
 
   console.log('✅ Carrinho criado');
+
+  // Wishlist
+  await prisma.wishlistItem.createMany({
+    data: [
+      { userId: customer.id, productId: products[1].id },  // Clean Code
+      { userId: customer.id, productId: products[3].id },  // Design Patterns
+    ],
+  });
+
+  console.log('✅ Favoritos criados');
   console.log('🎉 Seed finalizado!');
 }
 

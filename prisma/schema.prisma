@@ -24,6 +24,7 @@ model User {
   orders      Order[]
   couponUsage CouponUsage[]
   addresses   Address[]
+  wishlist    WishlistItem[]
 
   @@map("users")
 }
@@ -64,8 +65,9 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
 
   @@map("products")
 }
@@ -175,4 +177,18 @@ model CouponUsage {
 enum CouponType {
   PERCENT
   FIXED
+}
+
+// === WISHLIST ===
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])  // um produto por usuario na wishlist
+  @@map("wishlist_items")
 }
