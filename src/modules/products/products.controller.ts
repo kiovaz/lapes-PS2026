@@ -31,8 +31,7 @@ import { Role } from '@prisma/client';
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
-
+  constructor(private readonly productsService: ProductsService) {}
 
   @Get()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
@@ -64,7 +63,6 @@ export class ProductsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.findOne(id);
   }
-
 
   @Post()
   @ApiBearerAuth()

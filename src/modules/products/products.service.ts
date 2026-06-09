@@ -13,7 +13,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-  ) { }
+  ) {}
 
   // Admin
 
@@ -71,7 +71,6 @@ export class ProductsService {
       this.logger.debug(`Cache HIT: ${cacheKey}`);
       return cached;
     }
-
 
     const where: Record<string, unknown> = { deletedAt: null };
 

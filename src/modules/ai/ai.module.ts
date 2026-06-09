@@ -20,4 +20,4 @@ import { AuthModule } from '../auth/auth.module';
   controllers: [AiController],
   providers: [AiService],
 })
-export class AiModule { }
+export class AiModule {}

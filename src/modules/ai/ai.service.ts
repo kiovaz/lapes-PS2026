@@ -31,8 +31,7 @@ export class AiService {
     private readonly orders: OrdersService,
     private readonly cart: CartService,
     private readonly coupons: CouponsService,
-  ) { }
-
+  ) {}
 
   async smartSearch(query: string) {
     if (!this.gemini.isAvailable) {
@@ -125,7 +124,6 @@ export class AiService {
       ...(resultObj as Record<string, unknown>),
     };
   }
-
 
   async chat(
     userId: number,
