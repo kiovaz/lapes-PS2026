@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
@@ -14,6 +18,7 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
   };
 
@@ -225,6 +230,149 @@ describe('AuthService', () => {
       await expect(service.getProfile(999)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('deve atualizar o perfil e retornar os dados atualizados sem a senha', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 1,
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
+        phone: '21988887777',
+        password: 'hashed-password',
+        role: 'CUSTOMER',
+      });
+
+      mockPrisma.user.update.mockResolvedValue({
+        id: 1,
+        firstName: 'Carlos',
+        lastName: 'Oliveira',
+        email: 'joao@email.com',
+        cpf: '11144477735',
+        phone: '11999990000',
+        birthDate: new Date('1995-06-20'),
+        password: 'hashed-password',
+        role: 'CUSTOMER',
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-06-03'),
+      });
+
+      const result = await service.updateProfile(1, {
+        firstName: 'Carlos',
+        lastName: 'Oliveira',
+        phone: '11999990000',
+      });
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          firstName: 'Carlos',
+          lastName: 'Oliveira',
+          phone: '11999990000',
+        },
+      });
+
+      expect(result).not.toHaveProperty('password');
+      expect(result.fullName).toBe('Carlos Oliveira');
+      expect(result.firstName).toBe('Carlos');
+      expect(result.lastName).toBe('Oliveira');
+      expect(result.phone).toBe('11999990000');
+    });
+
+    it('deve atualizar apenas os campos enviados', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 1,
+        firstName: 'João',
+        lastName: 'Silva',
+        password: 'hashed-password',
+      });
+
+      mockPrisma.user.update.mockResolvedValue({
+        id: 1,
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
+        phone: '11999990000',
+        password: 'hashed-password',
+        role: 'CUSTOMER',
+      });
+
+      await service.updateProfile(1, { phone: '11999990000' });
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { phone: '11999990000' },
+      });
+    });
+
+    it('deve lançar UnauthorizedException se o usuário não existe', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile(999, { firstName: 'Teste' }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changePassword', () => {
+    const changePasswordDto = {
+      currentPassword: '123456',
+      newPassword: '654321',
+    };
+
+    it('deve alterar a senha com sucesso', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 1,
+        email: 'joao@email.com',
+        password: 'hashed-old-password',
+      });
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-new-password');
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await service.changePassword(1, changePasswordDto);
+
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        '123456',
+        'hashed-old-password',
+      );
+      expect(bcrypt.hash).toHaveBeenCalledWith('654321', 10);
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { password: 'hashed-new-password' },
+      });
+      expect(result).toEqual({ message: 'Senha alterada com sucesso.' });
+    });
+
+    it('deve lançar BadRequestException se a senha atual está incorreta', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 1,
+        email: 'joao@email.com',
+        password: 'hashed-old-password',
+      });
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(
+        service.changePassword(1, changePasswordDto),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar UnauthorizedException se o usuário não existe', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.changePassword(999, changePasswordDto),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(bcrypt.compare).not.toHaveBeenCalled();
     });
   });
 });

@@ -403,6 +403,79 @@ describe('OrdersService', () => {
       await expect(service.checkout(1, {})).rejects.toThrow(ConflictException);
     });
 
+    it('deve garantir que duas requisições simultâneas de usuários diferentes para o último item não tenham ambas sucesso', async () => {
+      // Cenário descrito no desafio:
+      // "Reserva atômica de estoque — duas requisições simultâneas para
+      //  o último item não podem ambas ter sucesso"
+      const makeCart = (userId: number) => ({
+        id: userId,
+        userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        items: [
+          {
+            id: userId,
+            cartId: userId,
+            productId: 1,
+            quantity: 1,
+            product: mockProduct({ stock: 1 }),
+          },
+        ],
+      });
+
+      prisma.cart.findUnique
+        .mockResolvedValueOnce(makeCart(1))
+        .mockResolvedValueOnce(makeCart(2));
+
+      prisma.order.findUnique.mockResolvedValue(null);
+      prisma.address.findFirst.mockResolvedValue(mockAddress());
+
+      // Ambos obtêm lock (são usuários diferentes, locks com keys diferentes)
+      redis.acquireLock.mockResolvedValue('lock-token');
+
+      let txCount = 0;
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        txCount++;
+        // Simula: primeira transação vê estoque=1, segunda vê estoque=0
+        // (porque o FOR UPDATE serializa o acesso)
+        const stockSnapshot = txCount === 1 ? 1 : 0;
+        const tx = {
+          $queryRawUnsafe: jest.fn(),
+          product: {
+            findMany: jest
+              .fn()
+              .mockResolvedValue([mockProduct({ stock: stockSnapshot })]),
+            update: jest.fn(),
+          },
+          order: {
+            create: jest
+              .fn()
+              .mockResolvedValue(mockOrder({ total: decimal(49.9) })),
+          },
+          couponUsage: { create: jest.fn() },
+          cartItem: { deleteMany: jest.fn() },
+        };
+        return fn(tx);
+      });
+
+      const results = await Promise.allSettled([
+        service.checkout(1, {}),
+        service.checkout(2, {}),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+
+      // Exatamente um deve ter sucesso e um deve falhar
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      if (rejected[0].status === 'rejected') {
+        expect(rejected[0].reason).toBeInstanceOf(ConflictException);
+        expect(rejected[0].reason.message).toContain('Estoque insuficiente');
+      }
+    });
+
     // Cupons
 
     it('deve aplicar cupom percentual corretamente', async () => {
