@@ -75,10 +75,14 @@ export class ProductsService {
     const where: Record<string, unknown> = { deletedAt: null };
 
     if (filters.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-      ];
+      const searchPattern = `%${filters.search}%`;
+      const matchingProducts = await this.prisma.$queryRaw<{ id: number }[]>`
+        SELECT id FROM "products"
+        WHERE unaccent(name) ILIKE unaccent(${searchPattern})
+           OR unaccent(description) ILIKE unaccent(${searchPattern})
+      `;
+      const ids = matchingProducts.map((p) => p.id);
+      where.id = { in: ids };
     }
     if (filters.category) {
       where.category = filters.category;

@@ -8,6 +8,7 @@ describe('ProductsService', () => {
   let service: ProductsService;
 
   const mockPrisma = {
+    $queryRaw: jest.fn(),
     product: {
       create: jest.fn(),
       update: jest.fn(),
@@ -137,16 +138,15 @@ describe('ProductsService', () => {
 
     it('deve aplicar busca por nome e descrição (search)', async () => {
       mockRedis.get.mockResolvedValue(null);
+      mockPrisma.$queryRaw.mockResolvedValue([{ id: 1 }]);
       mockPrisma.product.findMany.mockResolvedValue([]);
       mockPrisma.product.count.mockResolvedValue(0);
 
       await service.findAll({ search: 'camiseta' });
 
       const whereArg = mockPrisma.product.findMany.mock.calls[0][0].where;
-      expect(whereArg.OR).toEqual([
-        { name: { contains: 'camiseta', mode: 'insensitive' } },
-        { description: { contains: 'camiseta', mode: 'insensitive' } },
-      ]);
+      expect(whereArg.id).toEqual({ in: [1] });
+      expect(mockPrisma.$queryRaw).toHaveBeenCalled();
     });
 
     it('deve aplicar paginação (page + limit) e retornar meta com totalPages', async () => {
