@@ -1,63 +1,29 @@
 services:
   api:
     build:
-      context: .
+      context: ./backend
       target: base
     container_name: ecommerce-api
     ports:
       - "${PORT_API:-3000}:3000"
       - "${PORT_PRISMA_STUDIO:-5555}:5555"
     env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - ./backend/.env
     command: >
       sh -c "npx prisma migrate deploy &&
-             npx prisma db seed || true &&
              npm run start:dev"
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/node_modules
 
-  db:
-    image: postgres:16-alpine
-    container_name: ecommerce-db
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_STRIPE_PUBLIC_KEY=pk_test_51TZMP3FTxaZblzsvSEtnQ2jInbwxaPQBSg5wehNIXdtt2naf8IAWnH1hEISrWX9uyOSo9rxLxM9wHeBZKLuhQMSf00ysk5aHNp
+        - VITE_API_URL=http://localhost:3000
+    container_name: ecommerce-frontend
     ports:
-      - "${PORT_POSTGRES:-5432}:5432"
-    env_file:
-      - .env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: ecommerce-redis
-    ports:
-      - "${PORT_REDIS:-6379}:6379"
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: ecommerce-redis-commander
-    ports:
-      - "${PORT_REDIS_COMMANDER:-8081}:8081"
-    environment:
-      REDIS_HOSTS: local:redis:6379
+      - "${PORT_FRONTEND:-5173}:80"
     depends_on:
-      redis:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
+      - api

@@ -1,0 +1,1173 @@
+import { PrismaClient, Role, CouponType } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Iniciando seed...');
+
+  await prisma.wishlistItem.deleteMany();
+  await prisma.couponUsage.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
+  await prisma.coupon.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.address.deleteMany();
+  await prisma.user.deleteMany();
+
+  const hashedPassword = await bcrypt.hash('123456', 10);
+
+  const admin = await prisma.user.create({
+    data: {
+      firstName: 'Caio',
+      lastName: 'Vasconcelos',
+      email: 'caiovasconcelos01@live.com',
+      cpf: '52998224725',
+      phone: '11999990000',
+      birthDate: new Date('1990-01-15'),
+      password: hashedPassword,
+      role: Role.ADMIN,
+    },
+  });
+
+  const customer = await prisma.user.create({
+    data: {
+      firstName: 'Edgar',
+      lastName: 'Klewert',
+      email: 'edgar@email.com',
+      cpf: '11144477735',
+      phone: '21988887777',
+      birthDate: new Date('1995-06-20'),
+      password: hashedPassword,
+      role: Role.CUSTOMER,
+    },
+  });
+
+  console.log('✅ Usuários criados');
+
+  // Endereços
+  await prisma.address.create({
+    data: {
+      userId: customer.id,
+      label: 'Casa',
+      street: 'Rua das Flores, 123',
+      complement: 'Apto 42',
+      neighborhood: 'Centro',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01001000',
+      isDefault: true,
+    },
+  });
+
+  await prisma.address.create({
+    data: {
+      userId: customer.id,
+      label: 'Trabalho',
+      street: 'Av. Paulista, 1000',
+      complement: 'Sala 301',
+      neighborhood: 'Bela Vista',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01310100',
+      isDefault: false,
+    },
+  });
+
+  await prisma.address.create({
+    data: {
+      userId: admin.id,
+      label: 'Casa',
+      street: 'Rua Augusta, 500',
+      neighborhood: 'Consolação',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01304001',
+      isDefault: true,
+    },
+  });
+
+  console.log('✅ Endereços criados');
+
+  const productsData = [
+    {
+      name: 'O Senhor dos Anéis',
+      description: 'Trilogia completa de J.R.R. Tolkien em edição especial',
+      price: 89.90,
+      stock: 50,
+      category: 'fantasia',
+      image: 'https://i.imgur.com/t27Zq3t.jpeg',
+    },
+    {
+      name: 'Clean Code',
+      description: 'Código limpo: habilidades práticas do Agile Software — Robert C. Martin',
+      price: 59.90,
+      stock: 25,
+      category: 'tecnologia',
+      image: 'https://i.imgur.com/vXotBRy.jpeg',
+    },
+    {
+      name: 'Sapiens',
+      description: 'Uma breve história da humanidade — Yuval Noah Harari',
+      price: 44.90,
+      stock: 10,
+      category: 'historia',
+      image: 'https://i.imgur.com/62Phlce.jpeg',
+    },
+    {
+      name: 'Design Patterns',
+      description: 'Padrões de projeto: soluções reutilizáveis — GoF',
+      price: 79.90,
+      stock: 5,
+      category: 'tecnologia',
+      image: 'https://i.imgur.com/twRoFS7.png',
+    },
+    {
+      name: '1984',
+      description: 'Romance distópico clássico de George Orwell',
+      price: 29.90,
+      stock: 2,
+      category: 'ficcao',
+      image: 'https://i.imgur.com/5zapcYS.jpeg',
+    },
+
+    // --- TECNOLOGIA (20 NOVOS ITENS) ---
+    {
+      name: 'O Programador Pragmático',
+      description: 'De aprendiz a mestre — Andrew Hunt e David Thomas.',
+      price: 94.50,
+      stock: 15,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/020161622X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Arquitetura Limpa',
+      description: 'O guia do artesão para estrutura e design de software — Robert C. Martin.',
+      price: 84.90,
+      stock: 20,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0134494164.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Entendendo Algoritmos',
+      description: 'Um guia ilustrado para programadores e outros curiosos — Aditya Bhargava.',
+      price: 52.00,
+      stock: 35,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1617292230.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Projetando Aplicações Intensivas de Dados',
+      description: 'O guia definitivo para sistemas distribuídos de alta performance — Martin Kleppmann.',
+      price: 110.00,
+      stock: 12,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1449373321.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Domain-Driven Design',
+      description: 'Atacando a complexidade no coração do software — Eric Evans.',
+      price: 129.90,
+      stock: 8,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0321125215.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Refatoração',
+      description: 'Aperfeiçoando o design de códigos existentes — Martin Fowler.',
+      price: 89.90,
+      stock: 18,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0201485672.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Codificador Limpo',
+      description: 'Conduta profissional para programadores de software — Robert C. Martin.',
+      price: 59.00,
+      stock: 22,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0137081073.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Projeto Fênix',
+      description: 'Um romance sobre TI, DevOps e como ajudar o seu negócio a vencer — Gene Kim.',
+      price: 49.90,
+      stock: 30,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0988262592.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Trabalho Focado',
+      description: 'Como ter sucesso em um mundo repleto de distrações — Cal Newport.',
+      price: 39.90,
+      stock: 40,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1455586693.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Algoritmos: Teoria e Prática',
+      description: 'O livro clássico acadêmico sobre estruturas de dados e algoritmos — Thomas H. Cormen.',
+      price: 189.90,
+      stock: 10,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0262033844.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Cracking the Coding Interview',
+      description: '189 perguntas de programação com soluções detalhadas — Gayle Laakmann McDowell.',
+      price: 149.90,
+      stock: 14,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0984782860.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'JavaScript: O Guia Definitivo',
+      description: 'A bíblia da linguagem de programação mais popular da web — David Flanagan.',
+      price: 119.00,
+      stock: 15,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0596805527.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Startup Enxuta',
+      description: 'Como os empreendedores atuais utilizam a inovação contínua para criar empresas de sucesso — Eric Ries.',
+      price: 44.90,
+      stock: 25,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0307887898.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Mítico Homem-Mês',
+      description: 'Ensaios sobre Engenharia de Software e gerenciamento de projetos de TI — Fred Brooks.',
+      price: 64.90,
+      stock: 7,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0201835959.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Soft Skills: O manual de vida do desenvolvedor de software',
+      description: 'Conselhos sobre carreira, fitness, finanças e produtividade para devs — John Sonmez.',
+      price: 54.90,
+      stock: 12,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1617292397.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Desenvolvimento Eficaz de Código Legado',
+      description: 'Como modificar sistemas complexos de forma segura e criar testes de cobertura — Michael Feathers.',
+      price: 79.90,
+      stock: 9,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0131177052.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Code Complete',
+      description: 'O guia prático para construção e qualidade de software — Steve McConnell.',
+      price: 99.00,
+      stock: 8,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0735619670.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Peopleware: Produtividade e Projetos de Software',
+      description: 'O clássico sobre o lado humano do desenvolvimento de software — Tom DeMarco.',
+      price: 69.90,
+      stock: 11,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0321934113.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Clean Agile',
+      description: 'De volta às origens do manifesto ágil e seus conceitos puros — Robert C. Martin.',
+      price: 59.00,
+      stock: 15,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0135756308.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'You Don\'t Know JS: ES6 & Beyond',
+      description: 'Aprofundamento profundo nas entranhas da linguagem JavaScript — Kyle Simpson.',
+      price: 49.90,
+      stock: 20,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1491904240.01.LZZZZZZZ.jpg',
+    },
+
+    // --- FANTASIA (20 NOVOS ITENS) ---
+    {
+      name: 'A Sociedade do Anel',
+      description: 'O primeiro volume da grandiosa saga de fantasia épica — J.R.R. Tolkien.',
+      price: 49.90,
+      stock: 35,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0547928211.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'As Duas Torres',
+      description: 'O segundo volume da épica saga da Terra-média — J.R.R. Tolkien.',
+      price: 49.90,
+      stock: 30,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0547928203.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Retorno do Rei',
+      description: 'A conclusão monumental da busca pela destruição do Um Anel — J.R.R. Tolkien.',
+      price: 49.90,
+      stock: 28,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/054792819X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Silmarillion',
+      description: 'Os contos e mitos da fundação do universo e da Primeira Era — J.R.R. Tolkien.',
+      price: 44.90,
+      stock: 15,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0395354359.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Hobbit: Edição Clássica',
+      description: 'A aventura inesquecível de Bilbo Bolseiro e do mago Gandalf — J.R.R. Tolkien.',
+      price: 39.90,
+      stock: 45,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/054792822X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e a Pedra Filosofal',
+      description: 'O início da jornada do jovem bruxo descobrindo Hogwarts — J.K. Rowling.',
+      price: 39.90,
+      stock: 55,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/059035342X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e a Câmara Secreta',
+      description: 'Harry enfrenta mistérios ocultos nas profundezas de Hogwarts — J.K. Rowling.',
+      price: 39.90,
+      stock: 50,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0439064872.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e o Prisioneiro de Azkaban',
+      description: 'A ameaça do fugitivo Sirius Black assombra a escola de bruxaria — J.K. Rowling.',
+      price: 44.90,
+      stock: 45,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0439136369.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e o Cálice de Fogo',
+      description: 'O perigoso Torneio Tribruxo traz desafios mortais a Harry — J.K. Rowling.',
+      price: 54.90,
+      stock: 40,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0439139600.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e a Ordem da Fênix',
+      description: 'A rebelião dos bruxos contra o ceticismo do Ministério da Magia — J.K. Rowling.',
+      price: 59.90,
+      stock: 35,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0439358078.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e o Enigma do Príncipe',
+      description: 'Revelações sobre o passado de Voldemort preparam a batalha final — J.K. Rowling.',
+      price: 59.90,
+      stock: 30,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0439785960.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Harry Potter e as Relíquias da Morte',
+      description: 'A eletrizante caçada final às Horcruxes e a conclusão da saga — J.K. Rowling.',
+      price: 64.90,
+      stock: 32,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0545010225.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Guerra dos Tronos',
+      description: 'O início do épico confronto das famílias nobres de Westeros — George R.R. Martin.',
+      price: 69.90,
+      stock: 24,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553103547.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Fúria dos Reis',
+      description: 'A guerra dos cinco reis se alastra pelos Sete Reinos — George R.R. Martin.',
+      price: 69.90,
+      stock: 20,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/055310803X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Tormenta de Espadas',
+      description: 'O clímax sangrento e surpreendente da disputa pelo Trono — George R.R. Martin.',
+      price: 74.90,
+      stock: 19,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553106635.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Nome do Vento',
+      description: 'A lenda e a música da vida de Kvothe narradas por ele mesmo — Patrick Rothfuss.',
+      price: 59.90,
+      stock: 28,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0756404746.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Temor do Homem Sábio',
+      description: 'Kvothe dá continuidade à sua jornada e busca pela verdade de seus pais — Patrick Rothfuss.',
+      price: 69.90,
+      stock: 25,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0756404738.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Mistborn: O Império Final',
+      description: 'A luta audaciosa de Vin para derrotar o Senhor Soberano imortal — Brandon Sanderson.',
+      price: 54.90,
+      stock: 22,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/076531178X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'As Crônicas de Nárnia',
+      description: 'Volume único contendo todas as sete histórias do mundo mágico de Nárnia — C.S. Lewis.',
+      price: 79.90,
+      stock: 35,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0066238501.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Frankenstein',
+      description: 'O clássico gótico de Mary Shelley sobre os limites da ciência e da vida.',
+      price: 24.90,
+      stock: 18,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0486282112.01.LZZZZZZZ.jpg',
+    },
+
+    // --- FICCAO (20 NOVOS ITENS) ---
+    {
+      name: 'O Sol é Para Todos',
+      description: 'O emocionante romance sobre justiça social e preconceito no sul dos EUA — Harper Lee.',
+      price: 39.90,
+      stock: 30,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0060935464.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Grande Gatsby',
+      description: 'A trágica busca de Jay Gatsby pelo amor de Daisy durante a era do Jazz — F. Scott Fitzgerald.',
+      price: 29.90,
+      stock: 25,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0743273567.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Admirável Mundo Novo',
+      description: 'O clássico romance futurista sobre controle social e biotecnologia — Aldous Huxley.',
+      price: 34.90,
+      stock: 22,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0060850523.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Fahrenheit 451',
+      description: 'A distopia onde livros são queimados e o pensamento crítico é proibido — Ray Bradbury.',
+      price: 37.90,
+      stock: 26,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1451673310.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Revolução dos Bichos',
+      description: 'A genial fábula satírica sobre corrupção e revoluções — George Orwell.',
+      price: 24.90,
+      stock: 55,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0451526341.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Apanhador no Campo de Centeio',
+      description: 'A jornada de amadurecimento e rebeldia do jovem Holden Caulfield — J.D. Salinger.',
+      price: 34.90,
+      stock: 20,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0316769177.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Senhor das Moscas',
+      description: 'Garotos náufragos tentam se governar em uma ilha deserta e caem na barbárie — William Golding.',
+      price: 29.90,
+      stock: 18,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0399501487.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Crime e Castigo',
+      description: 'O drama psicológico do estudante Raskólnikov e sua busca por redenção — Dostoiévski.',
+      price: 54.90,
+      stock: 14,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0486415872.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Orgulho e Preceito',
+      description: 'As intrigas românticas e sociais das irmãs Bennet na Inglaterra vitoriana — Jane Austen.',
+      price: 24.90,
+      stock: 40,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0141439519.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Alquimista',
+      description: 'A mística jornada do pastor Santiago em busca do seu tesouro pessoal — Paulo Coelho.',
+      price: 29.90,
+      stock: 45,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0061122415.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Cem Anos de Solidão',
+      description: 'A saga épica da família Buendía no povoado fictício de Macondo — Gabriel García Márquez.',
+      price: 59.90,
+      stock: 30,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0060883286.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Duna',
+      description: 'A clássica ficção científica de Frank Herbert ambientada no perigoso deserto de Arrakis.',
+      price: 64.90,
+      stock: 40,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0441172717.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Neuromancer',
+      description: 'A obra fundadora do movimento cyberpunk e ciberespaço — William Gibson.',
+      price: 44.90,
+      stock: 12,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0441569595.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Fundação',
+      description: 'O plano científico de Hari Seldon para diminuir a idade das trevas na galáxia — Isaac Asimov.',
+      price: 49.90,
+      stock: 25,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553293354.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Guia do Mochileiro das Galáxias',
+      description: 'A hilária odisseia espacial de Arthur Dent pela galáxia — Douglas Adams.',
+      price: 29.90,
+      stock: 45,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0345391802.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Metamorfose',
+      description: 'A impactante narrativa de Gregor Samsa acordando transformado em um inseto — Franz Kafka.',
+      price: 19.90,
+      stock: 50,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0805210098.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Matadouro 5',
+      description: 'O romance antibélico clássico com toques de ficção científica de Kurt Vonnegut.',
+      price: 39.90,
+      stock: 15,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0385333846.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Catch-22',
+      description: 'A genial comédia satírica sobre a burocracia absurda da guerra — Joseph Heller.',
+      price: 44.90,
+      stock: 14,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0684833395.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Pequeno Príncipe',
+      description: 'A fábula poética e atemporal amada por gerações — Antoine de Saint-Exupéry.',
+      price: 19.90,
+      stock: 65,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0156012197.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Velho e o Mar',
+      description: 'A marcante história do pescador Santiago na sua maior batalha contra a natureza — Hemingway.',
+      price: 27.90,
+      stock: 30,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0684801221.01.LZZZZZZZ.jpg',
+    },
+
+    // --- HISTORIA (20 NOVOS ITENS) ---
+    {
+      name: 'Homo Deus',
+      description: 'Uma breve história do amanhã e os planos humanos para o futuro — Yuval Noah Harari.',
+      price: 49.90,
+      stock: 22,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0062464310.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: '21 Lições para o Século 21',
+      description: 'As principais problemáticas políticas e sociais do mundo atual — Yuval Noah Harari.',
+      price: 47.90,
+      stock: 20,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0525512179.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Armas, Germes e Aço',
+      description: 'O destino das sociedades humanas e sua evolução ecológica — Jared Diamond.',
+      price: 54.90,
+      stock: 15,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0393317552.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Breve História de Quase Tudo',
+      description: 'Um passeio didático e divertido pela história da ciência e da Terra — Bill Bryson.',
+      price: 49.90,
+      stock: 25,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0767908171.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'SPQR: Uma História da Roma Antiga',
+      description: 'A fascinante trajetória do império romano sob a visão da historiadora Mary Beard.',
+      price: 69.90,
+      stock: 12,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1631492425.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'As Rotas da Seda',
+      description: 'Uma nova história do mundo reavaliando a geopolítica do Oriente Médio à Ásia — Peter Frankopan.',
+      price: 64.90,
+      stock: 14,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1101912375.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Pós-Guerra: Uma História da Europa desde 1945',
+      description: 'A monumental crônica da reconstrução e transformações da Europa moderna — Tony Judt.',
+      price: 89.90,
+      stock: 8,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0143037759.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Uma Breve História do Tempo',
+      description: 'Dos buracos negros ao Big Bang, os mistérios da física explicados por Stephen Hawking.',
+      price: 34.90,
+      stock: 35,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553380168.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Cosmos',
+      description: 'A incrível exploração do universo, do tempo e do avanço científico — Carl Sagan.',
+      price: 59.90,
+      stock: 20,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0375508325.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Mundo Assombrado pelos Demônios',
+      description: 'A ciência como uma vela no escuro e defesa do ceticismo científico — Carl Sagan.',
+      price: 44.90,
+      stock: 30,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0345409469.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Rápido e Devagar: Duas Formas de Pensar',
+      description: 'Como as escolhas lógicas e intuitivas moldam nossas decisões — Daniel Kahneman.',
+      price: 59.90,
+      stock: 18,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0374275632.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Outliers: Fora de Série',
+      description: 'O que diferencia os indivíduos de sucesso extraordinário dos outros — Malcolm Gladwell.',
+      price: 39.90,
+      stock: 22,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0316017930.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Blink: A Decisão num Piscar de Olhos',
+      description: 'Como pensamos intuitivamente sem pensar de forma analítica — Malcolm Gladwell.',
+      price: 39.90,
+      stock: 25,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0316010669.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Factfulness',
+      description: 'Dez instintos que distorcem nossa visão do progresso e do mundo real — Hans Rosling.',
+      price: 44.90,
+      stock: 28,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1250107814.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Capital no Século XXI',
+      description: 'A ampla investigação sobre a distribuição histórica da riqueza mundial — Thomas Piketty.',
+      price: 89.90,
+      stock: 7,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/067443000X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Riqueza das Nações',
+      description: 'O livro seminal que moldou as bases do livre mercado capitalista — Adam Smith.',
+      price: 54.90,
+      stock: 15,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553585975.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Origem das Espécies',
+      description: 'A histórica obra sobre a teoria da evolução e seleção natural — Charles Darwin.',
+      price: 39.90,
+      stock: 16,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0802143500.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Sobre a Brevidade da Vida',
+      description: 'O ensaio clássico de Sêneca sobre a sabedoria estoica e a gestão do tempo.',
+      price: 19.90,
+      stock: 60,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0143037465.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Ascensão e Queda do Terceiro Reich',
+      description: 'A histórica e detalhada cobertura do nazismo na Alemanha — William L. Shirer.',
+      price: 99.00,
+      stock: 6,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1451651686.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Estrada para a Servidão',
+      description: 'O clássico alerta liberal de Friedrich Hayek sobre os riscos da centralização estatal.',
+      price: 39.90,
+      stock: 12,
+      category: 'historia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0226320553.01.LZZZZZZZ.jpg',
+    },
+
+    // --- BIOGRAFIA (20 NOVOS ITENS) ---
+    {
+      name: 'Steve Jobs',
+      description: 'A biografia detalhada do criador da Apple baseada em relatos reais — Walter Isaacson.',
+      price: 59.90,
+      stock: 25,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1451648537.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Elon Musk',
+      description: 'Os bastidores do homem mais rico e polêmico da atualidade — Walter Isaacson.',
+      price: 69.90,
+      stock: 22,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1982181281.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Leonardo da Vinci',
+      description: 'A extraordinária biografia que liga arte e ciência do grande gênio — Walter Isaacson.',
+      price: 64.90,
+      stock: 18,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1501139150.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Marca da Vitória',
+      description: 'A biografia inspiradora de Phil Knight e a construção do império da Nike.',
+      price: 49.90,
+      stock: 30,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1501135929.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Minha História',
+      description: 'As memórias profundas e inspiradoras de Michelle Obama.',
+      price: 49.90,
+      stock: 24,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1524763136.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Einstein: Sua Vida, Seu Universo',
+      description: 'O olhar fascinante sobre o gênio rebelde por trás da física — Walter Isaacson.',
+      price: 59.90,
+      stock: 15,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0743268926.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Diário de Anne Frank',
+      description: 'O relato intemporal da jovem judia durante o esconderijo da Segunda Guerra.',
+      price: 29.90,
+      stock: 45,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0553296981.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Churchill: Uma Vida',
+      description: 'A clássica biografia do líder inglês e estrategista militar — Martin Gilbert.',
+      price: 89.90,
+      stock: 10,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0805023968.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Gandhi: Uma Autobiografia',
+      description: 'Minha vida e minhas experiências com a verdade relatadas por ele mesmo.',
+      price: 34.90,
+      stock: 25,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0807059095.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Longo Caminho para a Liberdade',
+      description: 'A célebre autobiografia do ex-presidente sul-africano Nelson Mandela.',
+      price: 54.90,
+      stock: 18,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0316548189.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Alexandre, o Grande',
+      description: 'A histórica vida do conquistador do mundo clássico — Robin Lane Fox.',
+      price: 79.90,
+      stock: 8,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0140088102.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Gengis Khan e o Mundo Moderno',
+      description: 'Como o líder mongol abriu as rotas comerciais do planeta — Jack Weatherford.',
+      price: 49.90,
+      stock: 14,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0609809644.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Open: Autobiografia de Andre Agassi',
+      description: 'A comovente história do tenista que odiava o esporte que o consagrou.',
+      price: 49.90,
+      stock: 24,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0307388404.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Castelo de Vidro',
+      description: 'A comovente e excêntrica autobiografia da jornalista Jeannette Walls.',
+      price: 39.90,
+      stock: 20,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0743247541.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Autobiografia de Malcolm X',
+      description: 'O influente retrato do ativista dos direitos civis nos Estados Unidos.',
+      price: 34.90,
+      stock: 30,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0345350685.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Frida Kahlo: A Biografia',
+      description: 'O detalhado relato sobre a dor, o amor e a arte da pintora mexicana — Hayden Herrera.',
+      price: 59.90,
+      stock: 16,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0060085894.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Caminho de Mandela',
+      description: 'Quinze lições de vida, amor e coragem do lendário líder africano — Richard Stengel.',
+      price: 29.90,
+      stock: 35,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0307460681.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Prometeu Americano',
+      description: 'A fantástica biografia do físico nuclear J. Robert Oppenheimer — Kai Bird.',
+      price: 79.90,
+      stock: 15,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0375726262.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Eu sei por que o Pássaro Canta na Gaiola',
+      description: 'As comoventes memórias da ativista e escritora Maya Angelou.',
+      price: 34.90,
+      stock: 22,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0375507892.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Noite',
+      description: 'O relato pungente da sobrevivência de Elie Wiesel nos campos de extermínio nazistas.',
+      price: 24.90,
+      stock: 40,
+      category: 'biografia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0374500012.01.LZZZZZZZ.jpg',
+    },
+
+    // --- ADICIONAIS FINAIS ---
+    {
+      name: 'Grokking Deep Learning',
+      description: 'Aprenda os conceitos práticos de redes neurais profundas sem matemática complexa — Andrew W. Trask.',
+      price: 84.00,
+      stock: 10,
+      category: 'tecnologia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1617296155.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Hobbit: Edição de Luxo',
+      description: 'Edição especial capa dura com ilustrações exclusivas feitas pelo autor J.R.R. Tolkien.',
+      price: 119.90,
+      stock: 15,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/054792822X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Silêncio dos Inocentes',
+      description: 'O thriller clássico sobre Clarice Starling e o dr. Hannibal Lecter — Thomas Harris.',
+      price: 39.90,
+      stock: 22,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0312924585.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Drácula: Edição Especial',
+      description: 'O clássico gótico de Bram Stoker que imortalizou o mito dos vampiros em edição especial.',
+      price: 49.90,
+      stock: 25,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0785834241.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Frankenstein: Edição Definitiva',
+      description: 'O clássico romance de Mary Shelley sobre o criador e a criatura.',
+      price: 44.90,
+      stock: 20,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0141439470.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Cortiço',
+      description: 'O clássico romance naturalista brasileiro de habitação coletiva — Aluísio Azevedo.',
+      price: 14.90,
+      stock: 50,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1983584827.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Grande Sertão: Veredas',
+      description: 'Uma das maiores obras-primas do romance regionalista brasileiro — Guimarães Rosa.',
+      price: 79.90,
+      stock: 12,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/8503009941.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Metamorfose',
+      description: 'A surreal transformação de Gregor Samsa em um inseto gigante — Franz Kafka.',
+      price: 19.90,
+      stock: 55,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0805210098.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'A Cabana',
+      description: 'A emocionante jornada sobre dor, luto e transcendência religiosa — William P. Young.',
+      price: 34.90,
+      stock: 45,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0964729237.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Ensaio sobre a Cegueira',
+      description: 'A chocante parábola sobre uma súbita epidemia de cegueira branca — José Saramago.',
+      price: 54.90,
+      stock: 20,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1543666993.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Hobbit: A Batalha dos Cinco Exércitos',
+      description: 'O desfecho épico da aventura de Bilbo e os anões de Erebor — J.R.R. Tolkien.',
+      price: 24.90,
+      stock: 30,
+      category: 'fantasia',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/054792822X.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Os Miseráveis: Edição Integral',
+      description: 'A clássica obra de Victor Hugo retratando a injustiça social na França.',
+      price: 99.90,
+      stock: 10,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0451525264.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Conde de Monte Cristo',
+      description: 'A clássica e monumental história de traição e vingança — Alexandre Dumas.',
+      price: 89.90,
+      stock: 15,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0140449264.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Retrato de Dorian Gray',
+      description: 'A obra-prima de Oscar Wilde sobre vaidade, estética e moralidade da alma.',
+      price: 29.90,
+      stock: 35,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0141439578.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Moby Dick',
+      description: 'A obsessiva perseguição marítima à mítica baleia branca — Herman Melville.',
+      price: 49.90,
+      stock: 18,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1503280780.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Velho e o Mar',
+      description: 'A novela comovente e vencedora do Nobel escrita por Ernest Hemingway.',
+      price: 27.90,
+      stock: 40,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0684801221.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Guerra e Paz',
+      description: 'O painel épico de Liev Tolstói sobre a invasão napoleônica à Rússia.',
+      price: 119.90,
+      stock: 8,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/1400079985.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Anna Karenina',
+      description: 'A dolorosa e consagrada obra russa sobre amor e convenções sociais — Liev Tolstói.',
+      price: 69.90,
+      stock: 12,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0143035004.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'O Morro dos Ventos Uivantes',
+      description: 'O sombrio e tempestuoso romance de paixão entre Heathcliff e Catherine — Emily Brontë.',
+      price: 29.90,
+      stock: 30,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0141439551.01.LZZZZZZZ.jpg',
+    },
+    {
+      name: 'Jane Eyre',
+      description: 'A emocionante saga de superação da órfã Jane Eyre — Charlotte Brontë.',
+      price: 34.90,
+      stock: 25,
+      category: 'ficcao',
+      image: 'https://images-na.ssl-images-amazon.com/images/P/0141441149.01.LZZZZZZZ.jpg',
+    }
+  ];
+
+  // Insere todos os produtos no banco sequencialmente
+  const products = [];
+  for (const item of productsData) {
+    const created = await prisma.product.create({ data: item });
+    products.push(created);
+  }
+
+  console.log(`✅ ${products.length} Produtos reais criados no total!`);
+
+  await prisma.coupon.create({
+    data: {
+      code: 'LAPES10',
+      type: CouponType.PERCENT,
+      value: 10,
+      minOrderValue: 50,
+      expiresAt: new Date('2026-12-31'),
+    },
+  });
+
+  await prisma.coupon.create({
+    data: {
+      code: 'FRETE20',
+      type: CouponType.FIXED,
+      value: 20,
+      minOrderValue: 100,
+      expiresAt: new Date('2026-12-31'),
+    },
+  });
+
+  console.log('✅ Cupons criados');
+
+  await prisma.cart.create({
+    data: {
+      userId: customer.id,
+      items: {
+        create: [
+          { productId: products[0].id, quantity: 2 },
+          { productId: products[2].id, quantity: 1 },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Carrinho criado');
+
+  // Wishlist
+  await prisma.wishlistItem.createMany({
+    data: [
+      { userId: customer.id, productId: products[1].id },  // Clean Code
+      { userId: customer.id, productId: products[3].id },  // Design Patterns
+    ],
+  });
+
+  console.log('✅ Favoritos criados');
+  console.log('🎉 Seed finalizado!');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Erro no seed:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
