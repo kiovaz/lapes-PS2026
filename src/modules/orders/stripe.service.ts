@@ -52,6 +52,10 @@ export class StripeService {
     return refund;
   }
 
+  async retrievePaymentIntent(paymentIntentId: string) {
+    return this.stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
   constructEvent(payload: Buffer, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {

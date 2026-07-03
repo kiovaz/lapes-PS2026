@@ -20,8 +20,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('E-commerce LAPES')
-    .setDescription('API do E-commerce Simplificado — Desafio LAPES 2026')
+    .setTitle('E-commerce 8-Bit Books' /* 'E-commerce LAPES' */)
+    .setDescription('API do E-commerce Simplificado — Desafio 8-Bit Books 2026' /* 'API do E-commerce Simplificado — Desafio LAPES 2026' */)
     .setVersion('1.0')
     .addBearerAuth()
     .build();

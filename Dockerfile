@@ -33,14 +33,19 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 # builder topics
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/dist ./dist
-COPY prisma ./prisma
+# COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# COPY --from=builder /app/dist ./dist
+# COPY prisma ./prisma
+COPY --chown=node:node --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --chown=node:node --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node prisma ./prisma
 
 # SEC: user
 USER node
 
-EXPOSE 3000 5555
+EXPOSE 3000
+# EXPOSE 5555
 
 CMD ["node", "dist/src/main.js"]

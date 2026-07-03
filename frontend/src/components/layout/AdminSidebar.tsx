@@ -15,7 +15,7 @@ export default function AdminSidebar() {
     <aside className="sidebar">
       <Link to="/admin/products" className="sidebar-logo">
         <BookOpen size={20} />
-        LAPES Admin
+        {/* LAPES Admin */}8-Bit Books Admin
       </Link>
 
       <nav className="sidebar-nav">

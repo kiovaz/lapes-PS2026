@@ -1,7 +1,7 @@
 {
   "name": "ecommerce-lapes",
   "version": "1.0.0",
-  "description": "E-commerce Simplificado — Desafio LAPES 2026",
+  "description": "E-commerce Simplificado — Desafio 8-Bit Books 2026",
   "author": "Caio Vasconcelos / Edgar Klewert",
   "license": "MIT",
   "scripts": {
@@ -37,6 +37,7 @@
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/throttler": "^5.0.0",
     "@prisma/client": "^5.0.0",
+    "prisma": "^5.0.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",

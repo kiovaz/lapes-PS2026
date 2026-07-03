@@ -131,4 +131,25 @@ export class OrdersController {
   ) {
     return this.ordersService.advanceStatus(id, dto.status);
   }
+
+  // Confirmar pagamento (frontend após Stripe confirmCardPayment)
+
+  @Patch(':id/confirm-payment')
+  @ApiOperation({
+    summary: 'Confirma pagamento de um pedido',
+    description:
+      'Chamado pelo frontend após confirmCardPayment do Stripe retornar sucesso. ' +
+      'Verifica no Stripe se o pagamento foi realmente confirmado e atualiza o status para PAID.',
+  })
+  @ApiResponse({ status: 200, description: 'Pagamento confirmado.' })
+  @ApiResponse({ status: 400, description: 'Pagamento não confirmado pelo Stripe.' })
+  @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Sem permissão.' })
+  @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
+  confirmPayment(
+    @CurrentUser() user: { userId: number },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.ordersService.confirmPayment(user.userId, id);
+  }
 }

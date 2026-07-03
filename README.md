@@ -1,7 +1,7 @@
 <p align="center">
-  <h1 align="center">📚 E-commerce LAPES — Livraria</h1>
+  <h1 align="center">📚 E-commerce 8-Bit Books — Livraria<!-- E-commerce LAPES — Livraria --></h1>
   <p align="center">
-    <strong>E-commerce Simplificado de Livros — Desafio Técnico LAPES 2026</strong>
+    <strong>E-commerce Simplificado de Livros — Desafio Técnico 8-Bit Books 2026<!-- Desafio Técnico LAPES 2026 --></strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/NestJS-10-E0234E?logo=nestjs" alt="NestJS" />
@@ -38,7 +38,7 @@
 
 ## Descrição
 
-API RESTful de e-commerce de **livros** desenvolvida como desafio técnico do processo seletivo **LAPES 2026**. O sistema implementa um fluxo de compra completo — do cadastro do usuário até a entrega do pedido — com integração real de pagamentos via **Stripe**.
+API RESTful de e-commerce de **livros** desenvolvida como desafio técnico do processo seletivo **8-Bit Books 2026<!-- LAPES 2026 -->**. O sistema implementa um fluxo de compra completo — do cadastro do usuário até a entrega do pedido — com integração real de pagamentos via **Stripe**.
 
 Todos os **5 domínios de negócio** exigidos estão implementados: **Autenticação & Usuários**, **Catálogo de Produtos**, **Carrinho de Compras**, **Checkout & Pedidos** e **Cupons de Desconto**, além de módulos extras: **Endereços de Entrega**, **Wishlist/Favoritos** e **Health Check**.
 

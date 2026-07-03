@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Sparkles } from 'lucide-react';
+import { /* MessageSquare, */ X, Send, Sparkles } from 'lucide-react';
 import { aiApi, type ChatHistoryItem } from '../api/ai';
 import { useAuth } from '../contexts/AuthContext';
 

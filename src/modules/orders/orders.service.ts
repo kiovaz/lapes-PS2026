@@ -486,4 +486,54 @@ export class OrdersService {
 
     return order;
   }
+
+  //  CONFIRMAR PAGAMENTO (frontend → backend após Stripe confirmCardPayment)
+
+  async confirmPayment(userId: number, orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Pedido #${orderId} não encontrado.`);
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('Você não tem acesso a este pedido.');
+    }
+
+    // Já está pago
+    if (order.status !== OrderStatus.PENDING) {
+      return order;
+    }
+
+    if (!order.stripePaymentIntentId) {
+      throw new BadRequestException(
+        'Pedido não possui PaymentIntent associado.',
+      );
+    }
+
+    // Verificar no Stripe se o pagamento foi realmente confirmado
+    const paymentIntent = await this.stripe.retrievePaymentIntent(
+      order.stripePaymentIntentId,
+    );
+
+    if (paymentIntent.status !== 'succeeded') {
+      throw new BadRequestException(
+        `Pagamento ainda não confirmado pelo Stripe. Status: ${paymentIntent.status}`,
+      );
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.PAID },
+      include: { items: true },
+    });
+
+    this.logger.log(
+      `Pedido #${orderId} confirmado como PAID via frontend (PI: ${order.stripePaymentIntentId})`,
+    );
+
+    return updated;
+  }
 }
