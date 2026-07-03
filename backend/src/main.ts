@@ -20,8 +20,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('E-commerce 8-Bit Books' /* 'E-commerce LAPES' */)
-    .setDescription('API do E-commerce Simplificado — Desafio 8-Bit Books 2026' /* 'API do E-commerce Simplificado — Desafio LAPES 2026' */)
+    .setTitle('E-commerce 8-Bit Books')
+    .setDescription('API do E-commerce 8-Bit Books 2026')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -36,8 +36,6 @@ async function bootstrap() {
   console.log('');
   console.log('🚀 API rodando em: http://localhost:' + port);
   console.log('📚 Swagger em:     http://localhost:' + port + '/docs');
-  console.log('🎨 Prisma Studio em:   http://localhost:5555');
-  console.log('📊 Redis Commander em: http://localhost:8081');
   console.log('');
 }
 bootstrap();

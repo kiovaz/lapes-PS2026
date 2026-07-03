@@ -34,7 +34,7 @@ export default function Header() {
       <div className="header-inner">
         <Link to="/" className="header-logo">
           <BookOpen size={20} />
-          {/* LAPES Books */}8-Bit Books
+          {/* 8- Bit Books */}8-Bit Books
         </Link>
 
         <nav className="header-nav">

@@ -1494,10 +1494,30 @@ select.form-input {
   }
 
   .sidebar {
-    display: none;
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    box-shadow: none;
   }
 
   .sidebar.open {
+    display: flex;
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 40;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .mobile-menu-btn {
     display: flex;
   }
 
@@ -1509,8 +1529,17 @@ select.form-input {
     display: none;
   }
 
+  .header-nav-link span {
+    display: none;
+  }
+
   .page-header h1 {
     font-size: var(--text-lg);
+  }
+
+  .page-header-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .product-grid {
@@ -1535,6 +1564,18 @@ select.form-input {
     max-width: none;
   }
 
+  .category-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: var(--space-1);
+  }
+
+  .category-pills::-webkit-scrollbar {
+    display: none;
+  }
+
   .toast-container {
     left: var(--space-4);
     right: var(--space-4);
@@ -1549,6 +1590,50 @@ select.form-input {
 
   .modal {
     margin: var(--space-4);
+  }
+
+  /* Tables: horizontal scroll on mobile */
+  .table {
+    min-width: 640px;
+  }
+
+  /* Cart items on mobile */
+  .cart-item-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  /* Order detail expanded row */
+  .order-details-row td > div {
+    flex-direction: column !important;
+    gap: var(--space-4) !important;
+  }
+
+  /* Product detail */
+  .product-detail h1 {
+    font-size: var(--text-lg);
+  }
+
+  .product-detail-price {
+    font-size: var(--text-md);
+  }
+
+  .product-detail-actions {
+    flex-direction: column;
+  }
+
+  .product-detail-actions .btn {
+    width: 100%;
+  }
+
+  /* Stripe fields on mobile */
+  .stripe-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Empty state */
+  .empty-state {
+    padding: var(--space-10) var(--space-4);
   }
 }
 
@@ -1569,6 +1654,46 @@ select.form-input {
   .product-card-price {
     font-size: var(--text-sm);
   }
+
+  .store-content {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-5);
+  }
+
+  .header-logo {
+    font-size: var(--text-sm);
+  }
+
+  .btn-sm {
+    height: 28px;
+    padding: 0 var(--space-2);
+    font-size: 11px;
+  }
+
+  .summary-row {
+    font-size: var(--text-xs);
+  }
+}
+
+/* ── Mobile menu button (hidden by default, shown in 768px) ── */
+
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 /* ── Utility ─────────────────────────────────────── */

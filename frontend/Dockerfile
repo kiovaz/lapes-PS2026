@@ -8,7 +8,6 @@ RUN npm ci
 
 COPY . .
 
-# We can supply build args if needed, e.g., Stripe public key or custom API url
 ARG VITE_STRIPE_PUBLIC_KEY
 ARG VITE_API_URL
 ENV VITE_STRIPE_PUBLIC_KEY=$VITE_STRIPE_PUBLIC_KEY
@@ -24,6 +23,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Force Nginx to run only 1 worker process to avoid high resource consumption / OOM crashes in the cloud
+RUN sed -i 's/worker_processes  auto;/worker_processes  1;/g' /etc/nginx/nginx.conf
 
 EXPOSE 80
 

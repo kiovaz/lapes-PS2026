@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package } from 'lucide-react';
+import { Package, ChevronDown, ChevronUp, MapPin, Mail } from 'lucide-react';
 import { ordersApi } from '../../api/orders';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCurrency, formatDateTime, getOrderStatusLabel, toNumber } from '../../utils/formatters';
@@ -23,6 +23,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('ALL');
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const { addToast } = useToast();
 
   const fetchOrders = async () => {
@@ -57,6 +58,10 @@ export default function AdminOrdersPage() {
     } catch (err: any) {
       addToast(err.response?.data?.message || 'Erro ao cancelar', 'error');
     }
+  };
+
+  const toggleExpand = (orderId: number) => {
+    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
   const filtered = filter === 'ALL' ? orders : orders.filter((o) => o.status === filter);
@@ -98,6 +103,7 @@ export default function AdminOrdersPage() {
           <table className="table">
             <thead>
               <tr>
+                <th style={{ width: 40 }}></th>
                 <th>#</th>
                 <th>Cliente</th>
                 <th>Data</th>
@@ -109,38 +115,123 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <tr key={order.id}>
-                  <td className="font-medium">#{order.id}</td>
-                  <td className="text-sm">
-                    {order.user ? `${order.user.firstName} ${order.user.lastName}` : `User #${order.userId}`}
-                  </td>
-                  <td className="text-sm text-secondary">{formatDateTime(order.createdAt)}</td>
-                  <td>{order.items?.length || '-'}</td>
-                  <td className="font-medium">{formatCurrency(toNumber(order.total))}</td>
-                  <td>
-                    <span className={`badge ${statusBadge[order.status] || 'badge-neutral'}`}>
-                      {getOrderStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      {nextStatusMap[order.status] && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleAdvanceStatus(order.id, nextStatusMap[order.status])}
-                        >
-                          → {getOrderStatusLabel(nextStatusMap[order.status])}
-                        </button>
+                <>
+                  <tr key={order.id} style={{ cursor: 'pointer' }} onClick={() => toggleExpand(order.id)}>
+                    <td>
+                      {expandedOrderId === order.id
+                        ? <ChevronUp size={16} style={{ opacity: 0.5 }} />
+                        : <ChevronDown size={16} style={{ opacity: 0.5 }} />}
+                    </td>
+                    <td className="font-medium">#{order.id}</td>
+                    <td className="text-sm">
+                      <div>
+                        <strong>{order.user ? `${order.user.firstName} ${order.user.lastName}` : `Usuário #${order.userId}`}</strong>
+                      </div>
+                      {order.user?.email && (
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                          {order.user.email}
+                        </div>
                       )}
-                      {(order.status === 'PENDING' || order.status === 'PAID') && (
-                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-error)' }}
-                          onClick={() => handleCancel(order.id)}>
-                          Cancelar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="text-sm text-secondary">{formatDateTime(order.createdAt)}</td>
+                    <td>{order.items?.length || '-'}</td>
+                    <td className="font-medium">{formatCurrency(toNumber(order.total))}</td>
+                    <td>
+                      <span className={`badge ${statusBadge[order.status] || 'badge-neutral'}`}>
+                        {getOrderStatusLabel(order.status)}
+                      </span>
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        {nextStatusMap[order.status] && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleAdvanceStatus(order.id, nextStatusMap[order.status])}
+                          >
+                            → {getOrderStatusLabel(nextStatusMap[order.status])}
+                          </button>
+                        )}
+                        {(order.status === 'PENDING' || order.status === 'PAID') && (
+                          <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-error)' }}
+                            onClick={() => handleCancel(order.id)}>
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+
+                  {expandedOrderId === order.id && (
+                    <tr key={`${order.id}-details`} className="order-details-row">
+                      <td colSpan={8} style={{ padding: 'var(--space-4) var(--space-6)', background: 'var(--color-bg)' }}>
+                        <div style={{ display: 'flex', gap: 'var(--space-8)', flexWrap: 'wrap' }}>
+                          {/* Endereço de entrega */}
+                          <div style={{ flex: '1 1 280px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                              <MapPin size={14} />
+                              Endereço de Entrega
+                            </div>
+                            {order.shippingStreet ? (
+                              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                                <div>{order.shippingStreet}{order.shippingComplement ? `, ${order.shippingComplement}` : ''}</div>
+                                <div>{order.shippingNeighborhood}</div>
+                                <div>{order.shippingCity} — {order.shippingState}</div>
+                                <div>CEP: {order.shippingZipCode}</div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
+                                Endereço não informado
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Contato do cliente */}
+                          {order.user && (
+                            <div style={{ flex: '1 1 200px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                                <Mail size={14} />
+                                Contato
+                              </div>
+                              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                                <div>{order.user.firstName} {order.user.lastName}</div>
+                                <div>{order.user.email}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Itens do pedido */}
+                          <div style={{ flex: '2 1 300px' }}>
+                            <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>
+                              Itens do Pedido
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                              {order.items?.map((item) => (
+                                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+                                  {item.product?.image && (
+                                    <img
+                                      src={item.product.image}
+                                      alt={item.product.name}
+                                      style={{ width: 32, height: 42, objectFit: 'cover', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
+                                    />
+                                  )}
+                                  <span style={{ flex: 1, color: 'var(--color-text-secondary)' }}>
+                                    {item.product?.name || `Produto #${item.productId}`}
+                                  </span>
+                                  <span style={{ color: 'var(--color-text-tertiary)' }}>
+                                    x{item.quantity}
+                                  </span>
+                                  <span className="font-medium">
+                                    {formatCurrency(toNumber(item.priceAtPurchase) * item.quantity)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
             </tbody>
           </table>
@@ -149,3 +240,4 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+
