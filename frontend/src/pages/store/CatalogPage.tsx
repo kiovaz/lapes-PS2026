@@ -26,6 +26,8 @@ export default function CatalogPage() {
   const filters: ProductFilters = {
     search: searchParams.get('search') || undefined,
     category: searchParams.get('category') || undefined,
+    minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined,
+    maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
     page: Number(searchParams.get('page')) || 1,
     limit: 12,
     sortBy: (searchParams.get('sortBy') as ProductFilters['sortBy']) || 'createdAt',
@@ -106,6 +108,8 @@ export default function CatalogPage() {
   };
 
   const [searchValue, setSearchValue] = useState(filters.search || '');
+  const [minPriceValue, setMinPriceValue] = useState(searchParams.get('minPrice') || '');
+  const [maxPriceValue, setMaxPriceValue] = useState(searchParams.get('maxPrice') || '');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -113,6 +117,20 @@ export default function CatalogPage() {
     }, 400);
     return () => clearTimeout(timer);
   }, [searchValue]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilter('minPrice', minPriceValue || null);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [minPriceValue]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilter('maxPrice', maxPriceValue || null);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [maxPriceValue]);
 
   return (
     <div>
@@ -149,6 +167,31 @@ export default function CatalogPage() {
               {cat}
             </button>
           ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>Preço:</span>
+          <input
+            type="number"
+            className="form-input"
+            placeholder="Min"
+            min="0"
+            step="0.01"
+            value={minPriceValue}
+            onChange={(e) => setMinPriceValue(e.target.value)}
+            style={{ width: 90, minWidth: 'unset' }}
+          />
+          <span className="text-xs text-secondary">—</span>
+          <input
+            type="number"
+            className="form-input"
+            placeholder="Max"
+            min="0"
+            step="0.01"
+            value={maxPriceValue}
+            onChange={(e) => setMaxPriceValue(e.target.value)}
+            style={{ width: 90, minWidth: 'unset' }}
+          />
         </div>
 
         <select
@@ -196,6 +239,8 @@ export default function CatalogPage() {
           </p>
           <button className="btn btn-secondary" onClick={() => {
             setSearchValue('');
+            setMinPriceValue('');
+            setMaxPriceValue('');
             setSearchParams(new URLSearchParams());
           }}>
             Limpar filtros

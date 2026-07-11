@@ -12,7 +12,7 @@ const decimal = (v: number) => new Prisma.Decimal(v);
 
 const mockCoupon = (overrides = {}) => ({
   id: 1,
-  code: 'LAPES10',
+  code: 'CUPOM10',
   type: CouponType.PERCENT,
   value: decimal(10),
   minOrderValue: decimal(50),
@@ -54,17 +54,17 @@ describe('CouponsService', () => {
       prisma.coupon.create.mockResolvedValue(mockCoupon());
 
       const result = await service.create({
-        code: 'lapes10',
+        code: 'cupom10',
         type: CouponType.PERCENT,
         value: 10,
         minOrderValue: 50,
         expiresAt: '2027-12-31T00:00:00.000Z',
       });
 
-      expect(result.code).toBe('LAPES10');
+      expect(result.code).toBe('CUPOM10');
       expect(prisma.coupon.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          code: 'LAPES10',
+          code: 'CUPOM10',
           type: CouponType.PERCENT,
           value: 10,
           minOrderValue: 50,
@@ -97,7 +97,7 @@ describe('CouponsService', () => {
 
       await expect(
         service.create({
-          code: 'LAPES10',
+          code: 'CUPOM10',
           type: CouponType.PERCENT,
           value: 10,
           expiresAt: '2027-12-31T00:00:00.000Z',
@@ -236,7 +236,7 @@ describe('CouponsService', () => {
       prisma.couponUsage.findUnique.mockResolvedValue(null);
 
       const result = await service.validate(1, {
-        code: 'LAPES10',
+        code: 'CUPOM10',
         subtotal: 100,
       });
 
@@ -299,7 +299,7 @@ describe('CouponsService', () => {
       );
 
       await expect(
-        service.validate(1, { code: 'LAPES10', subtotal: 100 }),
+        service.validate(1, { code: 'CUPOM10', subtotal: 100 }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -312,7 +312,7 @@ describe('CouponsService', () => {
       });
 
       await expect(
-        service.validate(1, { code: 'LAPES10', subtotal: 100 }),
+        service.validate(1, { code: 'CUPOM10', subtotal: 100 }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -323,7 +323,7 @@ describe('CouponsService', () => {
       prisma.couponUsage.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.validate(1, { code: 'LAPES10', subtotal: 100 }),
+        service.validate(1, { code: 'CUPOM10', subtotal: 100 }),
       ).rejects.toThrow(BadRequestException);
     });
   });

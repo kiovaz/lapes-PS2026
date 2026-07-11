@@ -192,7 +192,7 @@ describe('ProductsService', () => {
       expect(mockRedis.set).toHaveBeenCalledWith(
         'products:detail:1',
         sampleProduct,
-        900_000,
+        Number(process.env.CACHE_PRODUCTS_DETAIL_TTL_MS) || 900_000,
       );
       expect(result).toEqual(sampleProduct);
     });

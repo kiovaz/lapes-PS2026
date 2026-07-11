@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Package, ChevronDown, ChevronUp, MapPin, Mail } from 'lucide-react';
 import { ordersApi } from '../../api/orders';
 import { useToast } from '../../contexts/ToastContext';
@@ -115,7 +115,7 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <>
+                <Fragment key={order.id}>
                   <tr key={order.id} style={{ cursor: 'pointer' }} onClick={() => toggleExpand(order.id)}>
                     <td>
                       {expandedOrderId === order.id
@@ -231,7 +231,7 @@ export default function AdminOrdersPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

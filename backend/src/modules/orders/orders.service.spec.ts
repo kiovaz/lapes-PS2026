@@ -485,7 +485,7 @@ describe('OrdersService', () => {
 
       prisma.coupon.findUnique.mockResolvedValue({
         id: 1,
-        code: 'LAPES10',
+        code: 'CUPOM10',
         type: CouponType.PERCENT,
         value: decimal(10),
         minOrderValue: decimal(50),
@@ -511,7 +511,7 @@ describe('OrdersService', () => {
         return fn(tx);
       });
 
-      const result = await service.checkout(1, { couponCode: 'LAPES10' });
+      const result = await service.checkout(1, { couponCode: 'CUPOM10' });
       expect(result.order).toBeDefined();
     });
 

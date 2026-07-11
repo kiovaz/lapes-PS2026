@@ -188,7 +188,7 @@ function CheckoutPageInner() {
         </div>
         <h3 className="empty-state-title">Pedido realizado!</h3>
         <p className="empty-state-description">
-          Seu pedido #{orderId} foi criado e pago com sucesso.
+          Seu pedido foi criado e pago com sucesso.
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
           <button className="btn btn-primary" onClick={() => navigate(`/orders/${orderId}`)}>

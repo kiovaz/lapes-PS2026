@@ -1117,7 +1117,7 @@ async function main() {
 
   await prisma.coupon.create({
     data: {
-      code: 'LAPES10',
+      code: 'CUPOM10',
       type: CouponType.PERCENT,
       value: 10,
       minOrderValue: 50,

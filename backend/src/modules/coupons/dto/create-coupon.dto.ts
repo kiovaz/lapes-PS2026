@@ -14,7 +14,7 @@ import { CouponType } from '@prisma/client';
 export class CreateCouponDto {
   @ApiProperty({
     description: 'Código único do cupom',
-    example: 'LAPES10',
+    example: 'CUPOM10',
   })
   @IsString()
   @IsNotEmpty()

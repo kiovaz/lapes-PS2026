@@ -179,7 +179,7 @@ export default function CartPage() {
                 <div className="coupon-input">
                   <input
                     className="form-input"
-                    placeholder="Ex: LAPES10"
+                    placeholder="Ex: CUPOM10"
                     value={couponCode}
                     onChange={(e) => { setCouponCode(e.target.value); setCouponResult(null); setCouponError(''); }}
                   />

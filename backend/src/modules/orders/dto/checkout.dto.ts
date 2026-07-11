@@ -4,7 +4,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class CheckoutDto {
   @ApiPropertyOptional({
     description: 'Código do cupom de desconto',
-    example: 'LAPES10',
+    example: 'CUPOM10',
   })
   @IsOptional()
   @IsString()

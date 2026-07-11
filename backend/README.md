@@ -1,655 +1,878 @@
-<p align="center">
-  <h1 align="center">📚 E-commerce 8-Bit Books — Livraria<!-- E-commerce LAPES — Livraria --></h1>
-  <p align="center">
-    <strong>E-commerce Simplificado de Livros — Desafio Técnico 8-Bit Books 2026<!-- Desafio Técnico LAPES 2026 --></strong>
-  </p>
-  <p align="center">
-    <img src="https://img.shields.io/badge/NestJS-10-E0234E?logo=nestjs" alt="NestJS" />
-    <img src="https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma" alt="Prisma" />
-    <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
-    <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis" />
-    <img src="https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white" alt="Stripe" />
-    <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker" />
-    <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white" alt="CI" />
-  </p>
-</p>
+# 📚 8-Bit Books — Backend (API)
+
+> API REST do e-commerce 8-Bit Books, construída com **NestJS**, **Prisma ORM**, **PostgreSQL**, **Redis**, **Stripe** e **Google Gemini (IA)**.
 
 ---
 
-## Índice
+## 📋 Índice
 
-- [Descrição](#descrição)
-- [Stack Técnica](#stack-técnica)
-- [Arquitetura](#arquitetura)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Modelagem do Banco](#modelagem-do-banco)
-- [Endpoints da API](#endpoints-da-api)
-- [Fluxo de Uso](#fluxo-de-uso)
-- [Decisões Técnicas](#decisões-técnicas)
-- [Como Rodar](#como-rodar)
-- [Variáveis de Ambiente](#variáveis-de-ambiente)
-- [Seed](#seed)
-- [Testes](#testes)
-- [Diferenciais Implementados](#diferenciais-implementados)
-- [Autores](#autores)
-
----
-
-## Descrição
-
-API RESTful de e-commerce de **livros** desenvolvida como desafio técnico do processo seletivo **8-Bit Books 2026<!-- LAPES 2026 -->**. O sistema implementa um fluxo de compra completo — do cadastro do usuário até a entrega do pedido — com integração real de pagamentos via **Stripe**.
-
-Todos os **5 domínios de negócio** exigidos estão implementados: **Autenticação & Usuários**, **Catálogo de Produtos**, **Carrinho de Compras**, **Checkout & Pedidos** e **Cupons de Desconto**, além de módulos extras: **Endereços de Entrega**, **Wishlist/Favoritos** e **Health Check**.
-
-> 📖 Documentação interativa da API disponível via **Swagger** em `/docs` ao rodar o servidor.
+- [Arquitetura](#-arquitetura)
+- [Estrutura de Pastas](#-estrutura-de-pastas)
+- [Responsabilidades das Camadas](#-responsabilidades-das-camadas)
+- [Banco de Dados](#-banco-de-dados)
+- [Migrations](#-migrations)
+- [Seed](#-seed)
+- [Autenticação e Autorização](#-autenticação-e-autorização)
+- [Middlewares](#-middlewares)
+- [Tratamento de Erros](#-tratamento-de-erros)
+- [Logs](#-logs)
+- [Cache (Redis)](#-cache-redis)
+- [Configuração](#-configuração)
+- [Variáveis de Ambiente](#-variáveis-de-ambiente)
+- [Scripts](#-scripts)
+- [Execução Local](#-execução-local)
+- [Testes](#-testes)
+- [Documentação da API (Swagger)](#-documentação-da-api-swagger)
+- [Endpoints](#-endpoints)
 
 ---
 
-## Stack Técnica
+## 🏗 Arquitetura
 
-| Camada | Tecnologia | Justificativa |
-|--------|-----------|---------------|
-| **Runtime** | Node.js 20 (Alpine) | LTS com performance otimizada |
-| **Framework** | NestJS 10 | Arquitetura modular, injeção de dependências, decorators |
-| **Linguagem** | TypeScript 5 | Tipagem estática em todo o projeto |
-| **ORM** | Prisma 5 | Client 100% tipado, migrations versionadas |
-| **Banco** | PostgreSQL 16 | Suporte a transações SERIALIZABLE e `SELECT ... FOR UPDATE` |
-| **Cache** | Redis 7 | Cache de produtos + distributed lock para checkout |
-| **Pagamentos** | Stripe | Gateway real com webhooks para confirmação assíncrona |
-| **Auth** | Passport + JWT + Bcrypt | Autenticação stateless com hash seguro |
-| **Docs** | Swagger / OpenAPI | Documentação interativa com exemplos |
-| **Validação** | class-validator + class-transformer | Validação de input nas bordas da API |
-| **Rate Limiting** | @nestjs/throttler | Proteção contra abuso em endpoints públicos |
-| **Logs** | Logger Middleware (JSON) | Toda request logada com timestamp, método, rota, status, duração |
-| **Testes** | Jest | 133 testes unitários cobrindo todos os serviços |
-| **CI** | GitHub Actions | Pipeline automatizada: lint → build → test com coverage |
-| **Containers** | Docker + Compose | Setup zero-config com 4 serviços orquestrados |
-
----
-
-## Arquitetura
-
-O projeto segue o padrão **Modular Monolith** do NestJS — cada domínio é um módulo isolado com controller, service e DTOs próprios.
+O backend segue a **arquitetura modular do NestJS**, com separação clara em módulos de domínio e módulos compartilhados (common):
 
 ```
-                         Cliente HTTP
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │  NestJS (:3000) │
-                     │  Global Pipes   │
-                     │  ThrottlerGuard │
-                     │  LoggerMiddle.  │
-                     │  ExceptionFilter│
-                     └───────┬─────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-    ┌─────▼─────┐     ┌─────▼──────┐    ┌─────▼──────┐
-    │   Auth    │     │  Products  │    │    Cart    │
-    │  Module   │     │  Module    │    │   Module   │
-    └───────────┘     └────────────┘    └────────────┘
-          │                  │                  │
-    ┌─────▼─────┐     ┌─────▼──────┐    ┌─────▼──────┐
-    │  Orders   │     │  Coupons   │    │ Addresses  │
-    │  Module   │     │  Module    │    │   Module   │
-    └───────────┘     └────────────┘    └────────────┘
-          │                                    │
-    ┌─────▼──────┐                      ┌──────▼─────┐
-    │  Stripe    │                      │  Wishlist  │
-    │  Service   │── Webhooks Ctrl      │  Module    │
-    └────────────┘                      └────────────┘
-          │
-          ▼
-  ┌───────────────────────────────────────────────┐
-  │                 Common Layer                  │
-  │  PrismaService  │  RedisService  │  Filters   │
-  └───────┬─────────┴───────┬────────┴────────────┘
-          │                 │
-    ┌─────▼─────┐    ┌──────▼──────┐
-    │ PostgreSQL│    │   Redis 7   │
-    │  (:5432)  │    │   (:6379)   │
-    └───────────┘    └─────────────┘
+AppModule
+├── ThrottlerModule (Rate Limiting global)
+├── PrismaModule (Banco de dados)
+├── RedisModule (Cache + Locks)
+├── GeminiModule (Integração com IA)
+├── AuthModule (Autenticação JWT)
+├── ProductsModule (Catálogo)
+├── CartModule (Carrinho)
+├── OrdersModule (Pedidos + Stripe + Webhooks)
+├── CouponsModule (Cupons de desconto)
+├── AddressesModule (Endereços)
+├── WishlistModule (Favoritos)
+└── AiModule (Busca inteligente + Chat)
 ```
+
+**Padrão por módulo:** `Controller → Service → PrismaService`
+
+Cada módulo contém:
+- **Controller** — Define rotas e decorators (Swagger, Guards, Throttle)
+- **Service** — Regras de negócio
+- **DTOs** — Validação de entrada com `class-validator`
+- **Spec** — Testes unitários (quando existente)
 
 ---
 
-## Estrutura do Projeto
+## 📁 Estrutura de Pastas
 
 ```
-ecommerce-lapes/
-├── .github/workflows/ci.yml       # Pipeline CI (lint → build → test)
-│
+backend/
 ├── prisma/
-│   ├── migrations/                 # Migrations versionadas
-│   ├── schema.prisma               # Schema do banco (9 models, 3 enums)
-│   └── seed.ts                     # Dados de desenvolvimento (livros)
-│
+│   ├── migrations/
+│   │   ├── 20260522221855_init/
+│   │   ├── 20260607154900_add_wishlist_items/
+│   │   ├── 20260608103434_add_user_fields_address_shipping/
+│   │   └── migration_lock.toml
+│   ├── schema.prisma                # Schema do banco de dados
+│   └── seed.ts                      # Seed de dados iniciais
 ├── src/
-│   ├── common/                     # Camada compartilhada
-│   │   ├── filters/                #   └── Exception filter global
-│   │   ├── logger/                 #   └── Logger JSON (toda request)
-│   │   ├── prisma/                 #   └── PrismaService (módulo global)
-│   │   └── redis/                  #   └── RedisService (cache + distributed lock)
-│   │
-│   ├── modules/                    # Domínios de negócio
-│   │   ├── auth/                   # Registro, login, perfil, update, senha, JWT, RBAC
-│   │   ├── products/               # CRUD + filtros + paginação + cache + categorias
-│   │   ├── cart/                   # Carrinho persistido (1 por usuário)
-│   │   ├── orders/                 # Checkout atômico + Stripe + webhooks
-│   │   ├── coupons/                # CRUD + validação (PERCENT / FIXED)
-│   │   ├── addresses/              # CRUD + endereço padrão
-│   │   └── wishlist/               # Favoritos (adicionar, remover, listar, verificar)
-│   │
-│   ├── health.controller.ts        # Health check (DB + Redis)
-│   ├── app.module.ts               # Módulo raiz + ThrottlerGuard global
-│   └── main.ts                     # Bootstrap + Swagger + CORS + ExceptionFilter
-│
-├── docker-compose.yml              # API + Postgres + Redis + Redis Commander
-├── Dockerfile                      # Multi-stage (base → builder → production)
-└── .env.example                    # Template de variáveis
+│   ├── common/
+│   │   ├── filters/
+│   │   │   └── http-exception.filter.ts   # GlobalExceptionFilter
+│   │   ├── gemini/
+│   │   │   ├── gemini.module.ts
+│   │   │   └── gemini.service.ts          # Integração Google Gemini
+│   │   ├── logger/
+│   │   │   └── logger.middleware.ts       # Middleware de log JSON
+│   │   ├── prisma/
+│   │   │   ├── prisma.module.ts
+│   │   │   └── prisma.service.ts          # Wrapper do PrismaClient
+│   │   ├── redis/
+│   │   │   ├── redis.module.ts
+│   │   │   └── redis.service.ts           # Cache, locks, SCAN
+│   │   └── validators/
+│   │       └── cpf.validator.ts           # Validador customizado de CPF
+│   ├── modules/
+│   │   ├── addresses/
+│   │   │   ├── addresses.controller.ts
+│   │   │   ├── addresses.module.ts
+│   │   │   ├── addresses.service.ts
+│   │   │   ├── addresses.service.spec.ts
+│   │   │   └── dto/
+│   │   │       ├── create-address.dto.ts
+│   │   │       └── update-address.dto.ts
+│   │   ├── ai/
+│   │   │   ├── ai.controller.ts
+│   │   │   ├── ai.module.ts
+│   │   │   ├── ai.service.ts
+│   │   │   └── dto/
+│   │   │       ├── chat-message.dto.ts
+│   │   │       └── smart-search.dto.ts
+│   │   ├── auth/
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.module.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── auth.service.spec.ts
+│   │   │   ├── decorators/
+│   │   │   │   ├── current-user.decorator.ts
+│   │   │   │   └── roles.decorator.ts
+│   │   │   ├── dto/
+│   │   │   │   ├── change-password.dto.ts
+│   │   │   │   ├── login.dto.ts
+│   │   │   │   ├── register.dto.ts
+│   │   │   │   └── update-profile.dto.ts
+│   │   │   ├── guards/
+│   │   │   │   ├── jwt-auth.guard.ts
+│   │   │   │   └── roles.guard.ts
+│   │   │   └── strategies/
+│   │   │       └── jwt.strategy.ts
+│   │   ├── cart/
+│   │   │   ├── cart.controller.ts
+│   │   │   ├── cart.module.ts
+│   │   │   ├── cart.service.ts
+│   │   │   ├── cart.service.spec.ts
+│   │   │   └── dto/
+│   │   │       ├── add-to-cart.dto.ts
+│   │   │       └── update-cart-item.dto.ts
+│   │   ├── coupons/
+│   │   │   ├── coupons.controller.ts
+│   │   │   ├── coupons.module.ts
+│   │   │   ├── coupons.service.ts
+│   │   │   ├── coupons.service.spec.ts
+│   │   │   └── dto/
+│   │   │       ├── create-coupon.dto.ts
+│   │   │       ├── update-coupon.dto.ts
+│   │   │       └── validate-coupon.dto.ts
+│   │   ├── orders/
+│   │   │   ├── orders.controller.ts
+│   │   │   ├── orders.module.ts
+│   │   │   ├── orders.service.ts
+│   │   │   ├── orders.service.spec.ts
+│   │   │   ├── stripe.service.ts
+│   │   │   ├── webhooks.controller.ts
+│   │   │   └── dto/
+│   │   │       ├── checkout.dto.ts
+│   │   │       └── update-order-status.dto.ts
+│   │   ├── products/
+│   │   │   ├── products.controller.ts
+│   │   │   ├── products.module.ts
+│   │   │   ├── products.service.ts
+│   │   │   ├── products.service.spec.ts
+│   │   │   └── dto/
+│   │   │       ├── create-product.dto.ts
+│   │   │       ├── filter-products.dto.ts
+│   │   │       └── update-product.dto.ts
+│   │   └── wishlist/
+│   │       ├── wishlist.controller.ts
+│   │       ├── wishlist.module.ts
+│   │       ├── wishlist.service.ts
+│   │       └── wishlist.service.spec.ts
+│   ├── app.module.ts                # Módulo raiz
+│   ├── health.controller.ts         # Health check
+│   └── main.ts                      # Bootstrap
+├── test/
+│   └── jest-e2e.json                # Config de testes e2e
+├── .env.example                     # Template de variáveis
+├── .eslintrc.js                     # Configuração ESLint
+├── .prettierrc                      # Configuração Prettier
+├── Dockerfile                       # Multi-stage build
+├── jest.config.json                 # Configuração Jest
+├── nest-cli.json                    # Config NestJS CLI
+├── tsconfig.json                    # Config TypeScript
+└── package.json
 ```
-
-Cada módulo em `modules/` segue o mesmo padrão: `controller` + `service` + `dto/` + `*.spec.ts`.
-O módulo `orders/` inclui ainda `stripe.service.ts` e `webhooks.controller.ts` para integração com pagamentos.
 
 ---
 
-## Modelagem do Banco
+## 🧱 Responsabilidades das Camadas
 
-O schema Prisma define **9 models** e **3 enums**, com migrations versionadas no diretório `prisma/migrations/`.
+| Camada | Responsabilidade |
+|---|---|
+| **Controllers** | Recebem requisições HTTP, validam entrada (DTOs), aplicam guards e decorators, delegam ao service |
+| **Services** | Implementam regras de negócio, interagem com Prisma, Redis e serviços externos (Stripe, Gemini) |
+| **DTOs** | Definem e validam a forma dos dados de entrada usando `class-validator` e `class-transformer` |
+| **Guards** | `JwtAuthGuard` (autenticação) e `RolesGuard` (autorização por role) |
+| **Decorators** | `@CurrentUser()` (extrai usuário do JWT), `@Roles()` (define roles permitidas) |
+| **Filters** | `GlobalExceptionFilter` captura e padroniza todas as exceções |
+| **Middlewares** | `LoggerMiddleware` loga todas as requisições em formato JSON |
+| **Strategies** | `JwtStrategy` configura extração e validação do token JWT |
 
-### Diagrama de Relações
+---
 
-```mermaid
-erDiagram
-    User ||--o| Cart : "1 carrinho por user"
-    User ||--o{ Order : "realiza pedidos"
-    User ||--o{ Address : "endereços de entrega"
-    User ||--o{ CouponUsage : "uso de cupom"
-    User ||--o{ WishlistItem : "favoritos"
+## 🗄 Banco de Dados
 
-    Cart ||--o{ CartItem : "contém itens"
-    CartItem }o--|| Product : "referencia"
+**SGBD:** PostgreSQL (recomendado: NeonDB para ambiente cloud)
+**ORM:** Prisma ^5.0.0
 
-    Order ||--o{ OrderItem : "contém itens"
-    Order }o--o| Coupon : "pode usar cupom"
-    OrderItem }o--|| Product : "referencia"
+### Modelos (Entidades)
 
-    Product ||--o{ WishlistItem : "favoritado por"
-
-    Coupon ||--o{ CouponUsage : "registra usos"
-```
+| Modelo | Tabela | Descrição |
+|---|---|---|
+| `User` | `users` | Usuários do sistema (ADMIN ou CUSTOMER) |
+| `Address` | `addresses` | Endereços dos usuários |
+| `Product` | `products` | Produtos do catálogo (com soft delete via `deletedAt`) |
+| `Cart` | `carts` | Carrinho de compras (1:1 com User) |
+| `CartItem` | `cart_items` | Itens do carrinho (unique: cartId + productId) |
+| `Order` | `orders` | Pedidos com status, total, desconto, dados de envio e integração Stripe |
+| `OrderItem` | `order_items` | Itens do pedido com snapshot de preço (`priceAtPurchase`) |
+| `Coupon` | `coupons` | Cupons de desconto (PERCENT ou FIXED) |
+| `CouponUsage` | `coupon_usage` | Controle de uso de cupom por usuário (unique: couponId + userId) |
+| `WishlistItem` | `wishlist_items` | Favoritos (unique: userId + productId) |
 
 ### Enums
 
 | Enum | Valores |
-|------|---------|
+|---|---|
 | `Role` | `ADMIN`, `CUSTOMER` |
-| `OrderStatus` | `PENDING` → `PAID` → `SHIPPED` → `DELIVERED` · `CANCELLED` |
+| `OrderStatus` | `PENDING`, `PAID`, `SHIPPED`, `DELIVERED`, `CANCELLED` |
 | `CouponType` | `PERCENT`, `FIXED` |
 
-### Regras de Integridade
-
-| Regra | Implementação |
-|-------|---------------|
-| Campos monetários | `Decimal(10,2)` — evita erros de ponto flutuante |
-| Produto único no carrinho | `@@unique([cartId, productId])` em CartItem |
-| Cupom uso único por usuário | `@@unique([couponId, userId])` em CouponUsage |
-| Produto único na wishlist | `@@unique([userId, productId])` em WishlistItem |
-| Snapshot de preço | `priceAtPurchase` em OrderItem — preço congelado no checkout |
-| Soft delete | `deletedAt` em Product — preserva integridade de pedidos históricos |
-| Cascade delete | `onDelete: Cascade` em CartItem e OrderItem |
-| Snapshot de endereço | Campos `shipping*` no Order — endereço copiado no checkout |
-
----
-
-## Endpoints da API
-
-> Documentação interativa completa em `/docs` (Swagger).
-
-### Auth
-
-| Método | Rota | Descrição | Auth | Rate Limit |
-|--------|------|-----------|------|------------|
-| `POST` | `/auth/register` | Registra novo customer | ❌ | 5 req/min |
-| `POST` | `/auth/login` | Autentica e retorna JWT | ❌ | 10 req/min |
-| `GET` | `/auth/me` | Retorna perfil do usuário logado | 🔒 Bearer | Global |
-| `PATCH` | `/auth/me` | Atualiza perfil (nome, sobrenome, telefone) | 🔒 Bearer | Global |
-| `PATCH` | `/auth/me/password` | Altera a senha (requer senha atual) | 🔒 Bearer | Global |
-
-### Products
-
-| Método | Rota | Descrição | Auth | Cache |
-|--------|------|-----------|------|-------|
-| `GET` | `/products` | Lista com filtros e paginação | ❌ | ✅ Redis |
-| `GET` | `/products/categories` | Lista categorias disponíveis | ❌ | ✅ Redis |
-| `GET` | `/products/:id` | Detalha um produto | ❌ | ✅ Redis |
-| `POST` | `/products` | Cria produto | 🔒 Admin | Invalida |
-| `PATCH` | `/products/:id` | Atualiza produto | 🔒 Admin | Invalida |
-| `DELETE` | `/products/:id` | Remove via soft delete | 🔒 Admin | Invalida |
-
-**Filtros disponíveis:** `?search=` (busca em nome **e** descrição), `?category=`, `?minPrice=`, `?maxPrice=`, `?page=`, `?limit=`, `?sortBy=`, `?order=`
-
-### Cart
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `GET` | `/cart` | Retorna carrinho do usuário | 🔒 Bearer |
-| `POST` | `/cart/items` | Adiciona item (valida estoque) | 🔒 Bearer |
-| `PATCH` | `/cart/items/:id` | Atualiza quantidade (valida estoque) | 🔒 Bearer |
-| `DELETE` | `/cart/items/:id` | Remove item | 🔒 Bearer |
-| `DELETE` | `/cart` | Limpa carrinho | 🔒 Bearer |
-
-### Orders
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `POST` | `/orders/checkout` | Cria pedido (reserva atômica de estoque) | 🔒 Bearer |
-| `GET` | `/orders` | Lista pedidos (admin vê todos) | 🔒 Bearer |
-| `GET` | `/orders/:id` | Detalha pedido | 🔒 Bearer |
-| `PATCH` | `/orders/:id/cancel` | Cancela pedido (antes de SHIPPED) | 🔒 Bearer |
-| `PATCH` | `/orders/:id/status` | Avança status (máquina de estados) | 🔒 Admin |
-
-### Coupons
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `POST` | `/coupons` | Cria cupom | 🔒 Admin |
-| `GET` | `/coupons` | Lista todos os cupons | 🔒 Admin |
-| `GET` | `/coupons/:id` | Detalha cupom + usos | 🔒 Admin |
-| `PATCH` | `/coupons/:id` | Atualiza cupom | 🔒 Admin |
-| `DELETE` | `/coupons/:id` | Remove cupom (se sem pedidos) | 🔒 Admin |
-| `POST` | `/coupons/validate` | Valida cupom antes do checkout | 🔒 Bearer |
-
-### Addresses
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `POST` | `/addresses` | Cadastra endereço (máx 5) | 🔒 Bearer |
-| `GET` | `/addresses` | Lista endereços do usuário | 🔒 Bearer |
-| `GET` | `/addresses/:id` | Detalha endereço | 🔒 Bearer |
-| `PATCH` | `/addresses/:id` | Atualiza endereço | 🔒 Bearer |
-| `DELETE` | `/addresses/:id` | Remove endereço | 🔒 Bearer |
-| `PATCH` | `/addresses/:id/default` | Define como padrão | 🔒 Bearer |
-
-### Wishlist
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `GET` | `/wishlist` | Lista favoritos do usuário | 🔒 Bearer |
-| `POST` | `/wishlist/:productId` | Adiciona livro aos favoritos | 🔒 Bearer |
-| `DELETE` | `/wishlist/:productId` | Remove livro dos favoritos | 🔒 Bearer |
-| `GET` | `/wishlist/:productId/check` | Verifica se livro está favoritado | 🔒 Bearer |
-
-### Health & Webhooks
-
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `GET` | `/health` | Verifica saúde da API (DB + Redis) | ❌ |
-| `POST` | `/webhooks/stripe` | Recebe eventos do Stripe | Assinatura Stripe |
-
----
-
-## Fluxo de Uso
-
-### Jornada do Customer (comprador de livros)
+### Diagrama de Relacionamentos
 
 ```
-1. REGISTRO           POST /auth/register
-   ↓                  (nome, email, CPF, senha, telefone, nascimento)
-2. LOGIN              POST /auth/login → recebe JWT
-   ↓
-3. PERFIL             GET /auth/me (ver perfil)
-   │                  PATCH /auth/me (atualizar nome/telefone)
-   │                  PATCH /auth/me/password (trocar senha)
-   ↓
-4. ENDEREÇO           POST /addresses (cadastrar endereço de entrega)
-   ↓
-5. NAVEGAR            GET /products?search=tolkien (busca por nome ou descrição)
-   │                  GET /products?category=fantasia (filtrar por categoria)
-   │                  GET /products/categories (listar categorias)
-   │                  GET /products/:id (detalhar livro)
-   ↓
-6. FAVORITAR          POST /wishlist/:productId (salvar pra depois)
-   │                  GET /wishlist (ver meus favoritos)
-   ↓
-7. CARRINHO           POST /cart/items (adicionar livro ao carrinho)
-   │                  PATCH /cart/items/:id (alterar quantidade)
-   │                  DELETE /cart/items/:id (remover item)
-   │                  GET /cart (ver carrinho)
-   ↓
-8. CUPOM              POST /coupons/validate (testar cupom antes de comprar)
-   ↓
-9. CHECKOUT           POST /orders/checkout → cria pedido + Stripe PaymentIntent
-   │                  (reserva estoque, aplica cupom, snapshot do endereço)
-   │                  ← retorna { order, clientSecret }
-   ↓
-10. PAGAMENTO         Frontend confirma pagamento via Stripe.js
-    │                 Stripe → POST /webhooks/stripe (payment_intent.succeeded)
-    │                 → Pedido atualizado para PAID automaticamente
-    ↓
-11. ACOMPANHAR        GET /orders (listar meus pedidos)
-    │                 GET /orders/:id (detalhar pedido)
-    ↓
-12. CANCELAR?         PATCH /orders/:id/cancel (antes de SHIPPED)
-                      → estoque devolvido + refund no Stripe
-```
-
-### Jornada do Admin (gerente da livraria)
-
-```
-1. LOGIN              POST /auth/login → JWT com role ADMIN
-   ↓
-2. GERENCIAR          POST /products (cadastrar novo livro)
-   CATÁLOGO           PATCH /products/:id (atualizar preço/estoque)
-                      DELETE /products/:id (remover livro — soft delete)
-   ↓
-3. GERENCIAR          POST /coupons (criar cupom de desconto)
-   CUPONS             PATCH /coupons/:id (editar valor/validade)
-                      DELETE /coupons/:id (remover cupom)
-   ↓
-4. GERENCIAR          GET /orders (ver todos os pedidos)
-   PEDIDOS            PATCH /orders/:id/status (avançar: PAID→SHIPPED→DELIVERED)
-                      PATCH /orders/:id/cancel (cancelar pedido de qualquer customer)
-   ↓
-5. MONITORAR          GET /health (verificar status do DB e Redis)
+User ──── 1:1 ──── Cart
+  │                  │
+  │ 1:N              │ 1:N
+  ▼                  ▼
+Address           CartItem ──── N:1 ──── Product
+Order                                      │
+  │ 1:N                                    │ 1:N
+  ▼                                        ▼
+OrderItem                           WishlistItem
+  │
+Coupon ──── 1:N ──── CouponUsage
 ```
 
 ---
 
-## Decisões Técnicas
+## 📦 Migrations
 
-### Controle de Concorrência (Anti-Overselling)
+As migrations estão em `prisma/migrations/`:
 
-O checkout é protegido por **3 camadas** contra venda duplicada do último livro:
+| Migration | Descrição |
+|---|---|
+| `20260522221855_init` | Schema inicial: users, products, carts, cart_items, orders, order_items, coupons, coupon_usage |
+| `20260607154900_add_wishlist_items` | Adição do modelo WishlistItem |
+| `20260608103434_add_user_fields_address_shipping` | Campos de endereço de entrega nos pedidos, modelo Address, campos extras em User |
 
-1. **Distributed Lock (Redis)** — `acquireLock()` com token UUID e TTL configurável impede dois checkouts simultâneos do mesmo usuário
-2. **Transação SERIALIZABLE (Prisma)** — nível de isolamento máximo do PostgreSQL
-3. **Lock pessimista (`SELECT ... FOR UPDATE`)** — trava as linhas dos produtos envolvidos dentro da transação
-
-```
-Checkout Request
-       │
-       ▼
-  Redis Lock ──── Lock adquirido? ──► Não → 409 Conflict
-       │
-      Sim
-       │
-       ▼
-  $transaction(SERIALIZABLE)
-       │
-       ├── SELECT ... FOR UPDATE (produtos)
-       ├── Validação de estoque
-       ├── Decremento atômico de estoque
-       ├── Criação do pedido + items
-       ├── Registro de uso de cupom
-       └── Limpeza do carrinho
-       │
-       ▼
-  Stripe PaymentIntent
-       │
-       ▼
-  Liberação do Redis Lock
-```
-
-### Integração Stripe
-
-- **Criação real de PaymentIntent** durante o checkout — retorna `client_secret` para o frontend
-- **Webhook** recebe `payment_intent.succeeded` e `payment_intent.payment_failed` com validação de assinatura
-- **Refund automático** ao cancelar pedidos com pagamento processado
-- **Graceful degradation**: se Stripe estiver indisponível, o pedido é criado mesmo assim (pagamento pode ser retentado)
-
-### Idempotência no Checkout
-
-O campo `idempotencyKey` (opcional) no checkout garante **retry seguro** — se a mesma key é enviada novamente, o pedido existente é retornado sem criar duplicatas.
-
-### Cache de Produtos (Redis)
-
-- **Lista**: chave `products:list:<hash_dos_filtros>` com TTL de 10 minutos (configurável)
-- **Detalhe**: chave `products:detail:<id>` com TTL de 15 minutos (configurável)
-- **Categorias**: chave `products:categories` com TTL de 10 minutos
-- **Invalidação**: automática ao criar, atualizar ou remover produto, e ao finalizar checkout/cancelamento
-- Hash MD5 dos filtros como chave para suportar diferentes combinações de busca
-
-### Máquina de Estados do Pedido
-
-```
-PENDING ──► PAID ──► SHIPPED ──► DELIVERED
-   │           │
-   └───────────┴──► CANCELLED (com devolução de estoque)
-```
-
-- Cancelamento permitido apenas nos estados `PENDING` e `PAID`
-- Ao cancelar, o estoque é devolvido **atomicamente** dentro de uma transação
-- Transições são validadas por uma lookup table `VALID_TRANSITIONS`
-
-### Segurança
-
-- **Senhas**: Bcrypt com 10 salt rounds — nunca retornadas nas responses
-- **JWT**: payload `{sub, email, role}`, expiração configurável
-- **RBAC**: `RolesGuard` + `@Roles()` decorator para proteção por papel
-- **Rate Limiting**: ThrottlerGuard global (30 req/min) + overrides por rota
-- **Validação**: `ValidationPipe` global com `whitelist: true` + `forbidNonWhitelisted: true`
-- **Erros**: `GlobalExceptionFilter` padroniza respostas sem expor stack traces
-- **Webhook**: validação de assinatura Stripe antes de processar eventos
-- **rawBody**: habilitado para receber payload bruto do Stripe
-
-### Logs (JSON Estruturado)
-
-Todas as requisições são logadas com:
-
-```json
-{
-  "timestamp": "2026-06-02T20:15:30.123Z",
-  "method": "POST",
-  "route": "/orders/checkout",
-  "statusCode": 201,
-  "duration": "142ms"
-}
-```
-
-Erros são capturados pelo `GlobalExceptionFilter` e retornados em formato padronizado:
-
-```json
-{
-  "statusCode": 409,
-  "message": "Estoque insuficiente para \"1984\". Disponível: 0, solicitado: 1.",
-  "timestamp": "2026-06-02T20:15:30.123Z",
-  "path": "/orders/checkout"
-}
-```
-
----
-
-## Como Rodar
-
-### Pré-requisitos
-
-- [Docker](https://www.docker.com/) e Docker Compose
-
-### Com Docker (recomendado) — Setup Zero-Config
+**Comandos:**
 
 ```bash
-# Clone e rode — só isso!
-git clone https://github.com/kiovaz/processo-seletivo-2026.git
-cd processo-seletivo-2026
-docker compose up
-```
+# Criar nova migration
+npx prisma migrate dev --name nome_da_migration
 
-> **Tudo é automático:** o `depends_on` com healthcheck garante que Postgres e Redis estejam prontos antes da API subir. Em seguida, o container da API aplica as migrations, popula o banco com seed e inicia com hot-reload.
+# Aplicar migrations em produção
+npx prisma migrate deploy
 
-Ao subir, os seguintes serviços estarão disponíveis:
-
-| Serviço | URL | Descrição |
-|---------|-----|-----------|
-| 🌐 **API** | http://localhost:3000 | Endpoints REST |
-| 📖 **Swagger** | http://localhost:3000/docs | Documentação interativa |
-| 📊 **Redis Commander** | http://localhost:8081 | Visualizar cache Redis |
-| 🎨 **Prisma Studio** | http://localhost:5555 | Visualizar banco (sob demanda) |
-
-**Credenciais de teste:**
-
-| Papel | Email | Senha |
-|-------|-------|-------|
-| 🔑 Admin | `caiovasconcelos01@live.com` | `123456` |
-| 🛒 Customer | `edgar@email.com` | `123456` |
-
-> **Nota:** O projeto funciona sem `.env` — valores padrão de desenvolvimento estão configurados. Para customizar, copie `.env.example` para `.env` e ajuste.
-
-### Guia de Comandos Docker
-
-| Comando | Descrição |
-|---------|-----------|
-| `docker compose up` | Sobe tudo com logs no terminal |
-| `docker compose up -d` | Sobe tudo em background |
-| `docker compose up -d --build` | Rebuilda a imagem e sobe |
-| `docker compose down` | Para e remove containers |
-| `docker compose down -v` | Para tudo **e apaga volumes** (reset total) |
-| `docker compose logs -f api` | Logs da API em tempo real |
-| `docker compose restart api` | Reinicia apenas a API |
-
-### Comandos Prisma (dentro do container)
-
-| Comando | Descrição |
-|---------|-----------|
-| `docker exec -it ecommerce-api npx prisma studio --hostname 0.0.0.0 --port 5555` | Abre Prisma Studio (porta 5555) |
-| `docker exec -it ecommerce-api npx prisma migrate deploy` | Aplica migrations pendentes |
-| `docker exec -it ecommerce-api npx prisma db seed` | Re-executa o seed |
-| `docker exec -it ecommerce-api npx prisma migrate reset --force` | Reset total do banco |
-
-### Sem Docker (desenvolvimento local)
-
-```bash
-# Instale as dependências
-npm install
-
-# Configure .env apontando para seu PostgreSQL e Redis locais
-cp .env.example .env
-
-# Gere o Prisma Client e rode migrations
-npx prisma generate
-npx prisma migrate dev
-
-# Execute o seed
-npx prisma db seed
-
-# Inicie em modo desenvolvimento (hot-reload)
-npm run start:dev
-```
-
----
-
-## Variáveis de Ambiente
-
-Copie o `.env.example` e ajuste conforme necessário:
-
-| Variável | Descrição | Default |
-|----------|-----------|---------|
-| `DATABASE_URL` | Connection string do PostgreSQL | `postgresql://postgres:postgres@db:5432/ecommerce` |
-| `REDIS_URL` | Connection string do Redis | `redis://redis:6379` |
-| `JWT_SECRET` | Chave secreta para assinar tokens | `my-secret-dev-key123` |
-| `JWT_EXPIRES_IN` | Tempo de expiração do JWT | `7d` |
-| `STRIPE_SECRET_KEY` | Chave secreta do Stripe | — |
-| `STRIPE_PUBLIC_KEY` | Chave pública do Stripe | — |
-| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe | — |
-| `CACHE_PRODUCTS_LIST_TTL` | TTL do cache de lista (ms) | `600000` (10 min) |
-| `CACHE_PRODUCTS_DETAIL_TTL` | TTL do cache de detalhe (ms) | `900000` (15 min) |
-| `CHECKOUT_LOCK_TTL_MS` | TTL do lock de checkout (ms) | `30000` (30s) |
-| `PORT_API` | Porta da API | `3000` |
-| `PORT_POSTGRES` | Porta do PostgreSQL | `5432` |
-| `PORT_REDIS` | Porta do Redis | `6379` |
-| `POSTGRES_USER` | Usuário do PostgreSQL | `postgres` |
-| `POSTGRES_PASSWORD` | Senha do PostgreSQL | `postgres` |
-| `POSTGRES_DB` | Nome do banco | `ecommerce` |
-
----
-
-## Seed
-
-O seed (`prisma/seed.ts`) popula o banco com dados de desenvolvimento:
-
-| Entidade | Dados |
-|----------|-------|
-| **Usuários** | `caiovasconcelos01@live.com` (ADMIN) + `edgar@email.com` (CUSTOMER) — senha: `123456` |
-| **Endereços** | 3 endereços (2 do customer + 1 do admin) |
-| **Livros** | 5 livros: O Senhor dos Anéis (R$89,90), Clean Code (R$59,90), Sapiens (R$44,90), Design Patterns (R$79,90), 1984 (R$29,90) |
-| **Categorias** | fantasia, tecnologia, historia, ficcao |
-| **Cupons** | `LAPES10` (10% off, mín R$50) + `FRETE20` (R$20 off, mín R$100) |
-| **Carrinho** | Carrinho do Edgar com O Senhor dos Anéis (×2) e Sapiens (×1) |
-| **Favoritos** | Edgar tem Clean Code e Design Patterns na wishlist |
-
-```bash
-# Executar seed manualmente
-npx prisma db seed
-
-# Reset total (drop + migrate + seed)
+# Reset completo (CUIDADO: apaga todos os dados)
 npx prisma migrate reset --force
 ```
 
-O seed é **idempotente** — ele limpa todas as tabelas antes de inserir, podendo ser executado quantas vezes necessário.
+---
+
+## 🌱 Seed
+
+O arquivo `prisma/seed.ts` popula o banco com dados iniciais (produtos de exemplo, usuários, etc.).
+
+```bash
+npx prisma db seed
+```
+
+O seed é executado via `ts-node` conforme configurado no `package.json`:
+
+```json
+"prisma": {
+  "seed": "ts-node prisma/seed.ts"
+}
+```
 
 ---
 
-## Testes
+## 🔐 Autenticação e Autorização
 
-**133 testes unitários** cobrindo os fluxos críticos de todos os 7 módulos:
+### Autenticação
 
-| Módulo | Testes | Fluxos cobertos |
-|--------|--------|-----------------|
-| **Auth** | 14 | registro, login, perfil, atualizar perfil, trocar senha |
-| **Products** | 15 | CRUD, cache HIT/MISS, filtros, paginação, busca em nome+descrição |
-| **Cart** | 17 | adicionar, remover, atualizar, limpar, validação de estoque |
-| **Orders** | 44 | checkout, concorrência (lock distribuído + FOR UPDATE), cupons, cancelamento, status, webhooks |
-| **Coupons** | 20 | CRUD, validação (expirado, já usado, mín. não atingido, % > 100) |
-| **Addresses** | 11 | CRUD, endereço padrão, limite de 5, acesso indevido |
-| **Wishlist** | 10 | adicionar, remover, listar, verificar, produto inexistente, duplicado |
+- **Estratégia:** JWT via `@nestjs/passport` + `passport-jwt`
+- **Hash de senha:** `bcrypt` com salt rounds = 10
+- **Token:** Gerado no login/registro, contém `{ sub: userId, email, role }`
+- **Expiração:** Configurável via `JWT_EXPIRES_IN` (padrão: `7d`)
+- **Validação:** `JwtStrategy` extrai o token do header `Authorization: Bearer <token>`
+
+### Autorização
+
+- **`JwtAuthGuard`** — Protege rotas que exigem autenticação
+- **`RolesGuard`** — Verifica se o role do usuário é compatível com os roles definidos via `@Roles(Role.ADMIN)`
+- **`@CurrentUser()`** — Decorator que extrai `{ userId, email, role }` do token JWT
+
+### Fluxo
+
+1. `POST /auth/register` → Cria usuário com senha hasheada → Retorna JWT
+2. `POST /auth/login` → Valida credenciais → Retorna JWT
+3. Requisições autenticadas enviam `Authorization: Bearer <token>`
+4. Guards verificam presença e validade do token + role (quando aplicável)
+
+---
+
+## 🔧 Middlewares
+
+| Middleware | Escopo | Descrição |
+|---|---|---|
+| `LoggerMiddleware` | Todas as rotas (`*`) | Loga método, rota, status code e duração em JSON |
+| `ThrottlerGuard` (global) | Todas as rotas | Rate limiting: 30 req/60s (padrão) |
+
+---
+
+## ❌ Tratamento de Erros
+
+O `GlobalExceptionFilter` captura **todas** as exceções e retorna:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Mensagem de erro",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "path": "/endpoint"
+}
+```
+
+- **Erros HTTP (4xx):** Logados como `warn`
+- **Erros internos (5xx):** Logados como `error` com stack trace completo (nunca exposto ao cliente)
+
+---
+
+## 📝 Logs
+
+- **Middleware:** `LoggerMiddleware` gera logs JSON estruturados com `timestamp`, `method`, `route`, `statusCode` e `duration`
+- **NestJS Logger:** Usado nos services (Stripe, Redis, AI, etc.) para logs de domínio
+- **Winston:** Disponível como dependência (`^3.11.0`), embora os logs atuais utilizem o Logger nativo do NestJS e `console.log`
+
+---
+
+## 🔴 Cache (Redis)
+
+O `RedisService` provê:
+
+| Método | Descrição |
+|---|---|
+| `get<T>(key)` | Busca valor com deserialização JSON automática |
+| `set(key, value, ttlMs?)` | Armazena valor com TTL opcional |
+| `del(key)` | Remove uma chave |
+| `delByPattern(pattern)` | Remove chaves por padrão (SCAN + DEL) |
+| `acquireLock(key, ttlMs)` | Distributed lock com SET NX EX |
+| `releaseLock(key, token)` | Release com Lua script (atômico) |
+
+**Uso no projeto:**
+- Cache de listagem e detalhes de produtos (TTLs configuráveis)
+- Lock distribuído no checkout (evita double-checkout)
+- Health check do Redis
+
+---
+
+## ⚙ Configuração
+
+| Arquivo | Descrição |
+|---|---|
+| `.env` / `.env.example` | Variáveis de ambiente |
+| `nest-cli.json` | Configuração do NestJS CLI |
+| `tsconfig.json` | Configuração TypeScript |
+| `.eslintrc.js` | ESLint com `@typescript-eslint` + Prettier |
+| `.prettierrc` | Formatação de código |
+| `jest.config.json` | Configuração do Jest (ts-jest, rootDir, moduleNameMapper) |
+| `Dockerfile` | Multi-stage Docker build (base → builder → production) |
+
+---
+
+## 🔐 Variáveis de Ambiente
+
+Veja o arquivo `.env.example` para o template completo:
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | ✅ | URL de conexão PostgreSQL |
+| `REDIS_URL` | ✅ | URL de conexão Redis |
+| `JWT_SECRET` | ✅ | Chave secreta JWT |
+| `JWT_EXPIRES_IN` | ❌ | Expiração do token (padrão: `7d`) |
+| `PORT_API` | ❌ | Porta da API (padrão: `3000`) |
+| `PORT_PRISMA_STUDIO` | ❌ | Porta do Prisma Studio (padrão: `5555`) |
+| `STRIPE_SECRET_KEY` | ✅ | Chave secreta do Stripe |
+| `STRIPE_PUBLIC_KEY` | ❌ | Chave pública do Stripe |
+| `STRIPE_WEBHOOK_SECRET` | ❌ | Secret do webhook Stripe |
+| `CACHE_PRODUCTS_LIST_TTL_MS` | ❌ | TTL cache listagem (padrão: `600000`) |
+| `CACHE_PRODUCTS_DETAIL_TTL_MS` | ❌ | TTL cache detalhe (padrão: `900000`) |
+| `CHECKOUT_LOCK_TTL_MS` | ❌ | TTL lock checkout (padrão: `30000`) |
+| `GEMINI_API_KEY` | ❌ | Chave API Google Gemini (necessário para IA) |
+| `GEMINI_MODEL` | ❌ | Modelo Gemini (padrão: `gemini-2.0-flash`) |
+
+---
+
+## 📜 Scripts
+
+| Script | Descrição |
+|---|---|
+| `npm run start:dev` | Inicia em modo desenvolvimento com hot reload |
+| `npm run start` | Inicia sem watch |
+| `npm run start:prod` | Inicia em modo produção |
+| `npm run build` | Compila TypeScript |
+| `npm run lint` | Executa ESLint |
+| `npm run lint:fix` | Corrige erros de lint |
+| `npm run format` | Formata com Prettier |
+| `npm test` | Executa testes unitários |
+| `npm run test:watch` | Testes em modo watch |
+| `npm run test:cov` | Testes com cobertura |
+| `npm run test:e2e` | Testes end-to-end |
+| `npm run prisma:generate` | Gera Prisma Client |
+| `npm run prisma:migrate` | Cria migration |
+| `npm run prisma:reset` | Reset do banco |
+| `npm run prisma:seed` | Popula banco |
+| `npm run prisma:studio` | Abre Prisma Studio |
+| `npm run prisma:studio:docker` | Abre Prisma Studio via Docker |
+| `npm run docker:up` | Sobe containers |
+| `npm run docker:down` | Para containers |
+
+---
+
+## 🖥 Execução Local
 
 ```bash
-# Rodar testes
+# 1. Instalar dependências
+npm install
+
+# 2. Configurar variáveis de ambiente
+cp .env.example .env
+# Editar .env com suas credenciais
+
+# 3. Gerar Prisma Client
+npx prisma generate
+
+# 4. Aplicar migrations
+npx prisma migrate dev
+
+# 5. (Opcional) Popular banco com dados de exemplo
+npx prisma db seed
+
+# 6. Iniciar em modo desenvolvimento
+npm run start:dev
+```
+
+A API estará disponível em `http://localhost:3000`.
+
+---
+
+## 🧪 Testes
+
+**Framework:** Jest ^29.7.0 + ts-jest
+**Config:** `jest.config.json`
+
+```bash
+# Rodar todos os testes
 npm test
+
+# Com cobertura
+npm run test:cov
 
 # Watch mode
 npm run test:watch
-
-# Cobertura
-npm test -- --coverage
 ```
 
-### Pipeline CI (GitHub Actions)
+### Testes unitários existentes
 
-Executada em todo **push** e **PR** para `main`:
+| Arquivo | Módulo |
+|---|---|
+| `auth.service.spec.ts` | Autenticação (registro, login, perfil, senha) |
+| `products.service.spec.ts` | Produtos (CRUD, filtros, cache) |
+| `cart.service.spec.ts` | Carrinho (adicionar, atualizar, remover) |
+| `orders.service.spec.ts` | Pedidos (checkout, cancelamento, status, pagamento) |
+| `coupons.service.spec.ts` | Cupons (CRUD, validação) |
+| `addresses.service.spec.ts` | Endereços (CRUD, endereço padrão) |
+| `wishlist.service.spec.ts` | Favoritos (adicionar, remover, verificar) |
 
-1. Checkout → Setup Node 20 → `npm ci`
-2. `prisma generate` → `prisma migrate deploy`
-3. Lint (`eslint`)
-4. Build (`nest build`)
-5. Testes com cobertura (`jest --coverage`)
+### Testes e2e
 
-Services no CI: PostgreSQL 16 + Redis 7 com health checks.
-
----
-
-## Diferenciais Implementados
-
-| Diferencial | Status | Detalhe |
-|-------------|--------|---------|
-| Soft delete em produtos | ✅ | Campo `deletedAt` preserva integridade de pedidos históricos |
-| Gateway de pagamento real (Stripe) | ✅ | PaymentIntent, webhooks, refunds |
-| Idempotência no checkout | ✅ | `idempotencyKey` para retry seguro |
-| Snapshot de endereço no pedido | ✅ | Campos `shipping*` congelados no momento do checkout |
-| Distributed Lock (Redis) | ✅ | Lock com token UUID + Lua script para release atômico |
-| Health check | ✅ | `GET /health` verifica PostgreSQL + Redis |
-| Wishlist / Favoritos | ✅ | Módulo completo com 4 endpoints e 10 testes |
-| Busca em nome + descrição | ✅ | `OR` query com `contains` case-insensitive |
-| Atualização de perfil e senha | ✅ | `PATCH /auth/me` e `PATCH /auth/me/password` |
+Configuração disponível em `test/jest-e2e.json`, mas sem arquivos de teste e2e implementados no momento.
 
 ---
 
-## Autores
+## 📖 Documentação da API (Swagger)
 
-| Nome | GitHub |
-|------|--------|
-| **Caio Vasconcelos** | [@kiovaz](https://github.com/kiovaz) |
-| **Edgar Klewert** | [@edgarklewert](https://github.com/Edgar-Klewert) |
+A documentação interativa está disponível em:
+
+```
+http://localhost:3000/docs
+```
+
+- **Título:** E-commerce 8-Bit Books
+- **Versão:** 1.0
+- **Autenticação:** Bearer Auth (JWT)
+- **Gerada automaticamente** a partir dos decorators `@ApiTags`, `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth`, `@ApiProperty`
+
+---
+
+## 🌐 Endpoints
+
+### Health
+
+| Método | Rota | Descrição | Auth | Códigos |
+|---|---|---|---|---|
+| `GET` | `/health` | Verifica saúde da API, PostgreSQL e Redis | ❌ | `200`, `503` |
+
+**Resposta 200:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "uptime": 12345.678,
+  "services": {
+    "database": { "status": "up" },
+    "redis": { "status": "up" }
+  }
+}
+```
+
+---
+
+### Auth (`/auth`)
+
+| Método | Rota | Descrição | Auth | Rate Limit | Códigos |
+|---|---|---|---|---|---|
+| `POST` | `/auth/register` | Registra novo customer | ❌ | 5 req/60s | `201`, `409` |
+| `POST` | `/auth/login` | Autentica usuário | ❌ | 10 req/60s | `200`, `401` |
+| `GET` | `/auth/me` | Retorna perfil do usuário logado | ✅ Bearer | — | `200`, `401` |
+| `PATCH` | `/auth/me` | Atualiza informações do perfil | ✅ Bearer | — | `200`, `401` |
+| `PATCH` | `/auth/me/password` | Altera senha do usuário | ✅ Bearer | — | `200`, `400`, `401` |
+
+#### `POST /auth/register`
+
+**Body:**
+```json
+{
+  "firstName": "João",
+  "lastName": "Silva",
+  "email": "joao@email.com",
+  "cpf": "12345678909",
+  "phone": "11999998888",
+  "birthDate": "1990-05-15",
+  "password": "123456"
+}
+```
+
+**Resposta 201:**
+```json
+{
+  "access_token": "eyJhbG...",
+  "user": {
+    "id": 1,
+    "firstName": "João",
+    "lastName": "Silva",
+    "fullName": "João Silva",
+    "email": "joao@email.com",
+    "role": "CUSTOMER"
+  }
+}
+```
+
+#### `POST /auth/login`
+
+**Body:**
+```json
+{
+  "email": "joao@email.com",
+  "password": "123456"
+}
+```
+
+**Resposta 200:** Mesma estrutura do registro.
+
+---
+
+### Products (`/products`)
+
+| Método | Rota | Descrição | Auth | Rate Limit | Códigos |
+|---|---|---|---|---|---|
+| `GET` | `/products` | Lista produtos com filtros e paginação | ❌ | 30 req/60s | `200` |
+| `GET` | `/products/categories` | Lista categorias disponíveis | ❌ | 30 req/60s | `200` |
+| `GET` | `/products/:id` | Detalha um produto | ❌ | 30 req/60s | `200`, `404` |
+| `POST` | `/products` | Cria produto | ✅ ADMIN | — | `201`, `401`, `403` |
+| `PATCH` | `/products/:id` | Atualiza produto | ✅ ADMIN | — | `200`, `401`, `403`, `404` |
+| `DELETE` | `/products/:id` | Remove produto (soft delete) | ✅ ADMIN | — | `200`, `401`, `403`, `404` |
+
+#### `GET /products` — Query Parameters
+
+| Parâmetro | Tipo | Descrição |
+|---|---|---|
+| `search` | `string` | Busca por nome (case-insensitive) |
+| `category` | `string` | Filtra por categoria exata |
+| `minPrice` | `number` | Preço mínimo |
+| `maxPrice` | `number` | Preço máximo |
+| `page` | `number` | Página (padrão: 1) |
+| `limit` | `number` | Itens por página (padrão: 10, max: 50) |
+| `sortBy` | `string` | Ordenar por: `price`, `name`, `createdAt` |
+| `order` | `string` | Direção: `asc`, `desc` |
+
+**Resposta 200:**
+```json
+{
+  "data": [{ "id": 1, "name": "...", "price": "29.90", ... }],
+  "meta": { "total": 100, "page": 1, "limit": 10, "totalPages": 10 }
+}
+```
+
+#### `POST /products` (ADMIN)
+
+**Body:**
+```json
+{
+  "name": "Livro Exemplo",
+  "description": "Descrição do livro",
+  "price": 59.9,
+  "stock": 100,
+  "category": "Ficção",
+  "image": "https://exemplo.com/imagem.png"
+}
+```
+
+---
+
+### Cart (`/cart`)
+
+> Todas as rotas requerem autenticação (`Bearer`).
+
+| Método | Rota | Descrição | Códigos |
+|---|---|---|---|
+| `GET` | `/cart` | Retorna o carrinho do usuário | `200`, `401` |
+| `POST` | `/cart/items` | Adiciona item ao carrinho | `201`, `400`, `401`, `404` |
+| `PATCH` | `/cart/items/:id` | Atualiza quantidade de um item | `200`, `400`, `401`, `404` |
+| `DELETE` | `/cart/items/:id` | Remove um item do carrinho | `200`, `401`, `404` |
+| `DELETE` | `/cart` | Limpa todo o carrinho | `200`, `401` |
+
+#### `POST /cart/items`
+
+**Body:**
+```json
+{
+  "productId": 1,
+  "quantity": 2
+}
+```
+
+#### `PATCH /cart/items/:id`
+
+**Body:**
+```json
+{
+  "quantity": 3
+}
+```
+
+---
+
+### Orders (`/orders`)
+
+> Todas as rotas requerem autenticação (`Bearer`).
+
+| Método | Rota | Descrição | Auth Especial | Códigos |
+|---|---|---|---|---|
+| `POST` | `/orders/checkout` | Cria pedido a partir do carrinho | — | `201`, `400`, `401`, `409` |
+| `GET` | `/orders` | Lista pedidos (admin vê todos) | — | `200`, `401` |
+| `GET` | `/orders/:id` | Detalha um pedido | — | `200`, `401`, `403`, `404` |
+| `PATCH` | `/orders/:id/cancel` | Cancela pedido (antes de SHIPPED) | — | `200`, `400`, `401`, `403`, `404` |
+| `PATCH` | `/orders/:id/status` | Avança status do pedido | ADMIN | `200`, `400`, `401`, `403`, `404` |
+| `PATCH` | `/orders/:id/confirm-payment` | Confirma pagamento | — | `200`, `400`, `401`, `403`, `404` |
+
+#### `POST /orders/checkout`
+
+**Body:**
+```json
+{
+  "couponCode": "CUPOM10",
+  "addressId": 1,
+  "idempotencyKey": "checkout-uuid-abc123"
+}
+```
+
+Todos os campos são opcionais. Se `addressId` não for informado, usa o endereço padrão do usuário.
+
+**Resposta 201:**
+```json
+{
+  "order": { "id": 1, "status": "PENDING", "total": "149.90", ... },
+  "clientSecret": "pi_xxx_secret_xxx"
+}
+```
+
+#### `PATCH /orders/:id/status` (ADMIN)
+
+**Body:**
+```json
+{
+  "status": "SHIPPED"
+}
+```
+
+**Máquina de estados:** `PENDING → PAID → SHIPPED → DELIVERED`
+
+---
+
+### Coupons (`/coupons`)
+
+> Todas as rotas requerem autenticação (`Bearer`).
+
+| Método | Rota | Descrição | Auth Especial | Códigos |
+|---|---|---|---|---|
+| `POST` | `/coupons` | Cria cupom | ADMIN | `201`, `400`, `401`, `403`, `409` |
+| `GET` | `/coupons` | Lista todos os cupons | ADMIN | `200`, `401`, `403` |
+| `GET` | `/coupons/:id` | Detalha um cupom | ADMIN | `200`, `401`, `403`, `404` |
+| `PATCH` | `/coupons/:id` | Atualiza cupom | ADMIN | `200`, `400`, `401`, `403`, `404`, `409` |
+| `DELETE` | `/coupons/:id` | Remove cupom | ADMIN | `200`, `400`, `401`, `403`, `404` |
+| `POST` | `/coupons/validate` | Valida cupom antes do checkout | — | `200`, `400`, `401`, `404` |
+
+#### `POST /coupons` (ADMIN)
+
+**Body:**
+```json
+{
+  "code": "CUPOM10",
+  "type": "PERCENT",
+  "value": 10,
+  "minOrderValue": 50,
+  "expiresAt": "2026-12-31T23:59:59.000Z"
+}
+```
+
+#### `POST /coupons/validate`
+
+**Body:**
+```json
+{
+  "code": "CUPOM10",
+  "subtotal": 150.00
+}
+```
+
+**Resposta 200:**
+```json
+{
+  "valid": true,
+  "coupon": { ... },
+  "subtotal": 150.00,
+  "discount": 15.00,
+  "total": 135.00
+}
+```
+
+---
+
+### Addresses (`/addresses`)
+
+> Todas as rotas requerem autenticação (`Bearer`).
+
+| Método | Rota | Descrição | Códigos |
+|---|---|---|---|
+| `POST` | `/addresses` | Cadastra novo endereço | `201`, `400`, `401` |
+| `GET` | `/addresses` | Lista endereços do usuário | `200`, `401` |
+| `GET` | `/addresses/:id` | Detalha um endereço | `200`, `401`, `403`, `404` |
+| `PATCH` | `/addresses/:id` | Atualiza um endereço | `200`, `401`, `403`, `404` |
+| `DELETE` | `/addresses/:id` | Remove um endereço | `200`, `401`, `403`, `404` |
+| `PATCH` | `/addresses/:id/default` | Define como endereço padrão | `200`, `401`, `403`, `404` |
+
+#### `POST /addresses`
+
+**Body:**
+```json
+{
+  "label": "Casa",
+  "street": "Rua das Flores, 123",
+  "complement": "Apto 42, Bloco B",
+  "neighborhood": "Centro",
+  "city": "São Paulo",
+  "state": "SP",
+  "zipCode": "01001000",
+  "isDefault": false
+}
+```
+
+---
+
+### Wishlist (`/wishlist`)
+
+> Todas as rotas requerem autenticação (`Bearer`).
+
+| Método | Rota | Descrição | Códigos |
+|---|---|---|---|
+| `GET` | `/wishlist` | Lista favoritos do usuário | `200`, `401` |
+| `POST` | `/wishlist/:productId` | Adiciona produto aos favoritos | `201`, `401`, `404`, `409` |
+| `DELETE` | `/wishlist/:productId` | Remove produto dos favoritos | `200`, `401`, `404` |
+| `GET` | `/wishlist/:productId/check` | Verifica se produto está nos favoritos | `200`, `401` |
+
+**Resposta do check:**
+```json
+{
+  "isFavorited": true
+}
+```
+
+---
+
+### AI (`/ai`)
+
+| Método | Rota | Descrição | Auth | Rate Limit | Códigos |
+|---|---|---|---|---|---|
+| `POST` | `/ai/search` | Busca inteligente com linguagem natural | ❌ | 15 req/60s | `200`, `400` |
+| `POST` | `/ai/chat` | Chat com assistente virtual | ✅ Bearer | 20 req/60s | `200`, `401` |
+
+#### `POST /ai/search`
+
+**Body:**
+```json
+{
+  "query": "livros de ficção até 50 reais"
+}
+```
+
+**Resposta 200:**
+```json
+{
+  "query": "livros de ficção até 50 reais",
+  "interpretedFilters": {
+    "category": "Ficção",
+    "maxPrice": 50,
+    "sortBy": "price",
+    "sortOrder": "asc"
+  },
+  "data": [...],
+  "meta": { ... }
+}
+```
+
+#### `POST /ai/chat`
+
+**Body:**
+```json
+{
+  "message": "Quais são meus pedidos?",
+  "history": [
+    { "role": "user", "content": "Olá" },
+    { "role": "model", "content": "Olá! Como posso ajudar?" }
+  ]
+}
+```
+
+**Resposta 200:**
+```json
+{
+  "response": "Você tem 3 pedidos: ...",
+  "functionsCalled": ["getOrders"]
+}
+```
+
+**Funções disponíveis via function calling:**
+- `searchProducts` — Busca no catálogo
+- `getCategories` — Lista categorias
+- `getProductDetails` — Detalhe de produto
+- `getCart` — Carrinho do usuário
+- `getOrders` — Pedidos do usuário
+- `getOrderDetails` — Detalhe de pedido
+- `checkCoupon` — Verifica cupom
+
+---
+
+### Webhooks (`/webhooks`)
+
+| Método | Rota | Descrição | Auth | Códigos |
+|---|---|---|---|---|
+| `POST` | `/webhooks/stripe` | Webhook do Stripe (uso interno) | Assinatura Stripe | `200`, `400` |
+
+> Este endpoint é excluído da documentação Swagger pública. Ele processa eventos `payment_intent.succeeded` e `payment_intent.payment_failed`.

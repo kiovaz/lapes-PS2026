@@ -77,7 +77,7 @@ export default function OrdersPage() {
                   <Package size={20} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">Pedido #{order.id}</div>
+                  <div className="text-sm font-semibold">Pedido</div>
                   <div className="text-xs text-secondary">{formatDateTime(order.createdAt)}</div>
                 </div>
               </div>

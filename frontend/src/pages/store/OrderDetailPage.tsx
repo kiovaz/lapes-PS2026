@@ -68,7 +68,7 @@ export default function OrderDetailPage() {
 
       <div className="page-header page-header-actions">
         <div>
-          <h1>Pedido #{order.id}</h1>
+          <h1>Detalhes do Pedido</h1>
           <p>{formatDateTime(order.createdAt)}</p>
         </div>
         {canCancel && (

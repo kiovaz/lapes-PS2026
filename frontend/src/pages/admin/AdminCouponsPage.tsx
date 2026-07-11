@@ -185,7 +185,7 @@ export default function AdminCouponsPage() {
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 <div className="form-group">
                   <label className="form-label">Código *</label>
-                  <input className="form-input" placeholder="LAPES10" value={form.code}
+                  <input className="form-input" placeholder="CUPOM10" value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                     style={{ textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }} required />
                 </div>

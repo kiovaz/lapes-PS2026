@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class ValidateCouponDto {
   @ApiProperty({
     description: 'Código do cupom a validar',
-    example: 'LAPES10',
+    example: 'CUPOM10',
   })
   @IsString()
   @IsNotEmpty()

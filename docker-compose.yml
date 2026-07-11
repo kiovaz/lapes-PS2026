@@ -9,9 +9,7 @@ services:
       - "${PORT_PRISMA_STUDIO:-5555}:5555"
     env_file:
       - ./backend/.env
-    command: >
-      sh -c "npx prisma migrate deploy &&
-             npm run start:dev"
+    command: npm run start:dev
     volumes:
       - ./backend:/app
       - /app/node_modules
