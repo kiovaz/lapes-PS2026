@@ -316,7 +316,7 @@ Cada módulo de API exporta um objeto com métodos que encapsulam chamadas REST:
 | `couponsApi` | `api/coupons.ts` | `create`, `findAll`, `findOne`, `update`, `remove`, `validate` |
 | `addressesApi` | `api/addresses.ts` | `create`, `findAll`, `findOne`, `update`, `remove`, `setDefault` |
 | `wishlistApi` | `api/wishlist.ts` | `findAll`, `add`, `remove`, `check` |
-| `aiApi` | `api/ai.ts` | `smartSearch`, `chat` |
+| `aiApi` | `api/ai.ts` | `chat` |
 
 ### Proxy de Desenvolvimento
 
@@ -425,7 +425,7 @@ Os componentes utilizam classes CSS definidas no `styles/index.css`, incluindo:
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 ```
 
-A extensão da responsividade não foi verificada em detalhe, mas a presença de viewport meta tag e CSS extenso sugere suporte a dispositivos móveis.
+O CSS em `styles/index.css` inclui media queries para adaptar o layout a diferentes tamanhos de tela.
 
 ---
 

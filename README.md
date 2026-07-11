@@ -22,7 +22,6 @@
 - [Testes](#-testes)
 - [Deploy](#-deploy)
 - [CI/CD](#-cicd)
-- [Como Contribuir](#-como-contribuir)
 - [Licença](#-licença)
 
 ---
@@ -86,23 +85,16 @@
 │                      │         │                      │
 └──────────────────────┘         └────────┬─────────────┘
                                           │
-                              ┌───────────┼───────────┐
-                              │           │           │
-                              ▼           ▼           ▼
-                        ┌──────────┐ ┌─────────┐ ┌─────────┐
-                        │PostgreSQL│ │  Redis  │ │ Stripe  │
-                        │ (NeonDB) │ │(Upstash)│ │   API   │
-                        └──────────┘ └─────────┘ └─────────┘
-                                                      │
-                                          ┌───────────┘
-                                          ▼
-                                    ┌──────────┐
-                                    │ Gemini   │
-                                    │ (AI)     │
-                                    └──────────┘
+                          ┌───────┬───────┼───────┐
+                          │       │       │       │
+                          ▼       ▼       ▼       ▼
+                    ┌────────┐┌───────┐┌───────┐┌──────┐
+                    │Postgres││ Redis ││Stripe ││Gemini│
+                    │(NeonDB)││(Upst.)││  API  ││ (AI) │
+                    └────────┘└───────┘└───────┘└──────┘
 ```
 
-**Padrão Arquitetural:** Modular (NestJS Modules) com camadas de Controller → Service → Prisma ORM.
+**Padrão Arquitetural:** Modular (NestJS Modules) com camadas de Controller → Service → Módulos compartilhados (Prisma, Redis, Gemini) e serviços externos (Stripe).
 
 ---
 
@@ -118,7 +110,10 @@
 | Prisma | ^5.0.0 | ORM |
 | PostgreSQL | 18 | Banco de dados relacional |
 | Redis (ioredis) | ^5.3.0 | Cache e locks distribuídos |
-| Passport + JWT | ^0.7.0 / ^10.0.0 | Autenticação |
+| Passport + JWT | ^0.7.0 / ^4.0.0 | Autenticação |
+| @nestjs/passport | ^10.0.0 | Integração Passport com NestJS |
+| @nestjs/jwt | ^10.0.0 | Módulo JWT do NestJS |
+| @nestjs/throttler | ^5.0.0 | Rate Limiting |
 | Stripe | ^22.1.1 | Pagamentos |
 | Swagger | ^7.0.0 | Documentação da API |
 | Gemini (Google AI) | ^0.24.1 | Inteligência artificial |
@@ -138,6 +133,7 @@
 | React Router DOM | ^7.18.1 | Roteamento SPA |
 | Axios | ^1.18.1 | Cliente HTTP |
 | Stripe.js | ^9.9.0 | Integração de pagamento |
+| @stripe/react-stripe-js | ^6.7.0 | Componentes React do Stripe |
 | Lucide React | ^1.23.0 | Ícones |
 | Oxlint | ^1.71.0 | Linter |
 

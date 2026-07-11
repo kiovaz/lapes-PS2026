@@ -3,6 +3,7 @@ import {
   GoogleGenerativeAI,
   Content,
   FunctionDeclarationsTool,
+  FunctionResponsePart,
 } from '@google/generative-ai';
 
 @Injectable()
@@ -50,7 +51,7 @@ export class GeminiService implements OnModuleInit {
       },
     });
 
-    const result = await model.generateContent(prompt);
+    const result = await this.withRetry(() => model.generateContent(prompt));
     const text = result.response.text();
 
     return JSON.parse(text) as T;
@@ -82,7 +83,7 @@ export class GeminiService implements OnModuleInit {
     const chat = model.startChat({ history });
 
     // Envia a mensagem do usuário
-    let result = await chat.sendMessage(userMessage);
+    let result = await this.withRetry(() => chat.sendMessage(userMessage));
     let response = result.response;
 
     const functionsCalled: string[] = [];
@@ -137,14 +138,31 @@ export class GeminiService implements OnModuleInit {
       }
 
       // Envia os resultados das funções de volta ao modelo
-      result = await chat.sendMessage(functionResponses.map((fr) => fr as any));
+      result = await this.withRetry(() =>
+        chat.sendMessage(
+          functionResponses.map(
+            (fr) =>
+              ({
+                functionResponse: fr.functionResponse,
+              }) as FunctionResponsePart,
+          ),
+        ),
+      );
       response = result.response;
 
       iterations++;
     }
 
-    const finalText =
-      response.text() || 'Desculpe, não consegui processar sua solicitação.';
+    let finalText: string;
+    try {
+      finalText = response.text();
+    } catch {
+      finalText = 'Desculpe, não consegui processar sua solicitação.';
+    }
+
+    if (!finalText) {
+      finalText = 'Desculpe, não consegui processar sua solicitação.';
+    }
 
     return { text: finalText, functionsCalled };
   }
@@ -155,5 +173,25 @@ export class GeminiService implements OnModuleInit {
         'Gemini não está configurado. Defina GEMINI_API_KEY no .env.',
       );
     }
+  }
+
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    retries = 2,
+  ): Promise<T> {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        const status = error.status || error.httpCode;
+        const isRetryable = [429, 500, 503].includes(status);
+        if (i === retries || !isRetryable) throw error;
+        this.logger.warn(
+          `Gemini retry ${i + 1}/${retries} — ${error.message}`,
+        );
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      }
+    }
+    throw new Error('Unreachable');
   }
 }
