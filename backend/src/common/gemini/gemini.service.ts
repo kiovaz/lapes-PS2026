@@ -175,10 +175,7 @@ export class GeminiService implements OnModuleInit {
     }
   }
 
-  private async withRetry<T>(
-    fn: () => Promise<T>,
-    retries = 2,
-  ): Promise<T> {
+  private async withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
     for (let i = 0; i <= retries; i++) {
       try {
         return await fn();
@@ -186,9 +183,7 @@ export class GeminiService implements OnModuleInit {
         const status = error.status || error.httpCode;
         const isRetryable = [429, 500, 503].includes(status);
         if (i === retries || !isRetryable) throw error;
-        this.logger.warn(
-          `Gemini retry ${i + 1}/${retries} — ${error.message}`,
-        );
+        this.logger.warn(`Gemini retry ${i + 1}/${retries} — ${error.message}`);
         await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
       }
     }

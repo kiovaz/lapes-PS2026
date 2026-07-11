@@ -6,7 +6,6 @@ services:
     container_name: ecommerce-api
     ports:
       - "${PORT_API:-3000}:3000"
-      - "${PORT_PRISMA_STUDIO:-5555}:5555"
     env_file:
       - ./backend/.env
     command: npm run start:dev
