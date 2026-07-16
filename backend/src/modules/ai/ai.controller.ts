@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -11,6 +11,7 @@ import { AiService } from './ai.service';
 import { SmartSearchDto } from './dto/smart-search.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -59,7 +60,7 @@ export class AiController {
     status: 401,
     description: 'Token ausente ou inválido.',
   })
-  chat(@Request() req: any, @Body() dto: ChatMessageDto) {
-    return this.aiService.chat(req.user.sub, dto.message, dto.history);
+  chat(@CurrentUser() user: { userId: number }, @Body() dto: ChatMessageDto) {
+    return this.aiService.chat(user.userId, dto.message, dto.history);
   }
 }
