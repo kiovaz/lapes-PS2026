@@ -32,6 +32,8 @@
 
 **Autor:** Caio Vasconcelos
 
+**E-mail**: caio24300103@aluno.cesupa.br
+
 ---
 
 ## ✨ Funcionalidades
